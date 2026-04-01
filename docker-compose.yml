@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongo:
+    image: mongo:6-jammy
+    container_name: wealthos-mongo
+    restart: unless-stopped
+    # Remove port binding in production for security
+    # ports:
+    #   - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=wealthos
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-changeme-in-production}
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - wealthos-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Backend API
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: wealthos-server
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-changeme-in-production}@mongo:27017/wealthos?authSource=admin
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRE=7d
+      - API_PREFIX=/api/v1
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - wealthos-network
+    volumes:
+      - ./server/logs:/app/logs
+
+  # Frontend (built and served by nginx)
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: wealthos-client
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    networks:
+      - wealthos-network
+
+volumes:
+  mongo-data:
+
+networks:
+  wealthos-network:
+    driver: bridge
