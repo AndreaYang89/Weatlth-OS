@@ -4,7 +4,8 @@ const router = express.Router();
 const { Holding, Transaction } = require('../models');
 const { auth } = require('../middleware/auth');
 const validate = require('../middleware/validate');
-const { analyzeHolding } = require('../utils/aiAnalysis');
+const { analyzeHolding } = require('../utils/aiAnalysis'); // mock，用于初始创建时的快速分析
+const aiService = require('../services/aiService');
 const { refreshAllPrices } = require('../jobs/priceRefresh');
 
 // Validation rules
