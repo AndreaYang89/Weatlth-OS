@@ -34,10 +34,10 @@ export const LoginPage: React.FC = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-            <span className="text-3xl font-bold text-white">W</span>
+            <span className="text-3xl font-bold text-stone-900">W</span>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">WealthOS</h1>
-          <p className="text-slate-400 text-sm">智能资产配置管理系统</p>
+          <h1 className="text-2xl font-bold text-stone-900 mb-2">WealthOS</h1>
+          <p className="text-stone-500 text-sm">智能资产配置管理系统</p>
         </div>
 
         {/* Tabs */}
@@ -46,8 +46,8 @@ export const LoginPage: React.FC = () => {
             onClick={() => setIsLogin(true)}
             className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${
               isLogin
-                ? 'bg-indigo-500 text-white'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                ? 'bg-indigo-500 text-stone-900'
+                : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
             }`}
           >
             登录
@@ -56,8 +56,8 @@ export const LoginPage: React.FC = () => {
             onClick={() => setIsLogin(false)}
             className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${
               !isLogin
-                ? 'bg-indigo-500 text-white'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                ? 'bg-indigo-500 text-stone-900'
+                : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
             }`}
           >
             注册
@@ -112,7 +112,7 @@ export const LoginPage: React.FC = () => {
         </form>
 
         {/* Demo hint */}
-        <p className="mt-6 text-center text-xs text-slate-500">
+        <p className="mt-6 text-center text-xs text-stone-400">
           演示账号: demo@example.com / password123
         </p>
       </div>

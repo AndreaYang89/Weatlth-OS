@@ -18,61 +18,48 @@ function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const pageTitles: Record<TabType, string> = {
-    overview:  '资产配置',
-    holdings:  '持仓明细',
-    ai:        'AI评估',
-    rebalance: '调仓计算',
-    review:    '复盘日记',
-    import:    '导入资产',
-    settings:  '系统配置',
+    overview: '资产配置', holdings: '持仓明细', ai: 'AI评估',
+    rebalance: '调仓计算', review: '复盘日记', import: '导入资产', settings: '系统配置',
   };
 
   const renderPage = () => {
     switch (activeTab) {
-      case 'overview':
-        return <OverviewPage onAddHolding={() => setIsAddModalOpen(true)} onNavigateToAI={() => setActiveTab('ai')} />;
+      case 'overview':  return <OverviewPage onAddHolding={() => setIsAddModalOpen(true)} onNavigateToAI={() => setActiveTab('ai')} />;
       case 'holdings':  return <HoldingsPage />;
       case 'ai':        return <AIAnalysisPage />;
       case 'rebalance': return <RebalancePage />;
       case 'review':    return <ReviewPage />;
-      case 'import':    return <ImportPage />;
+      case 'import':    return <ImportPage onImportDone={() => setActiveTab('overview')} />;
       case 'settings':  return <SettingsPage />;
-      default:
-        return <OverviewPage onAddHolding={() => setIsAddModalOpen(true)} onNavigateToAI={() => setActiveTab('ai')} />;
+      default: return <OverviewPage onAddHolding={() => setIsAddModalOpen(true)} onNavigateToAI={() => setActiveTab('ai')} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#1C1917]">
+    <div className="min-h-screen bg-[#F7F5F2]">
       <ToastContainer />
 
-      {/* Desktop sidebar */}
       <div className="hidden lg:block">
         <SideNav activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
 
-      {/* Content area */}
       <div className="lg:ml-56">
-        {/* Mobile header */}
         <div className="lg:hidden">
           <Header title="WealthOS" subtitle={pageTitles[activeTab]} />
         </div>
 
-        {/* Desktop top bar */}
-        <div className="hidden lg:block sticky top-0 z-40 bg-[rgba(22,20,18,0.9)] backdrop-blur-xl border-b border-stone-800/80">
+        <div className="hidden lg:block sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-stone-200">
           <div className="px-8 py-3">
-            <h2 className="text-sm font-semibold text-stone-200">{pageTitles[activeTab]}</h2>
+            <h2 className="text-sm font-semibold text-stone-700">{pageTitles[activeTab]}</h2>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[rgba(217,119,87,0.3)] to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[rgba(217,119,87,0.4)] to-transparent" />
         </div>
 
-        {/* Page content */}
         <main className="px-4 pt-20 pb-28 lg:pt-6 lg:pb-8 lg:px-8 max-w-2xl lg:max-w-none mx-auto">
           {renderPage()}
         </main>
       </div>
 
-      {/* Mobile bottom nav */}
       <div className="lg:hidden">
         <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
       </div>

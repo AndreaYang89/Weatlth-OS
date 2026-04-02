@@ -5,15 +5,26 @@ import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X, Download } from '
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { holdingsApi } from '@/api/services';
+import { usePortfolioStore } from '@/store';
 
-// ── 支持的列映射（中英文兼容）────────────────────────────────────
+// ── 支持的列映射（兼容券商导出格式）─────────────────────────────
 const COL_MAP: Record<string, string> = {
-  '名称': 'name', 'name': 'name', 'Name': 'name',
-  '代码': 'symbol', 'symbol': 'symbol', 'Symbol': 'symbol', 'code': 'symbol',
-  '类别': 'category', 'category': 'category', 'Category': 'category',
-  '股数': 'shares', 'shares': 'shares', 'Shares': 'shares', '数量': 'shares',
-  '均价': 'avgCost', 'avgCost': 'avgCost', '成本': 'avgCost', 'avg_cost': 'avgCost',
-  '现价': 'currentPrice', 'currentPrice': 'currentPrice', '当前价': 'currentPrice',
+  // 名称
+  '名称': 'name', '证券名称': 'name', '股票名称': 'name', 'name': 'name',
+  // 代码
+  '代码': 'symbol', '证券代码': 'symbol', '股票代码': 'symbol', 'symbol': 'symbol', 'code': 'symbol',
+  // 股数/数量
+  '持有数量': 'shares', '股数': 'shares', '数量': 'shares', '持仓数量': 'shares',
+  '可用数量': 'shares', 'shares': 'shares',
+  // 成本/均价
+  '单位成本': 'avgCost', '成本价': 'avgCost', '均价': 'avgCost', '持仓成本': 'avgCost',
+  '买入均价': 'avgCost', 'avgCost': 'avgCost', 'avg_cost': 'avgCost',
+  // 现价
+  '最新价': 'currentPrice', '现价': 'currentPrice', '当前价': 'currentPrice',
+  '市价': 'currentPrice', 'currentPrice': 'currentPrice',
+  // 类别
+  '类别': 'category', '板块': 'category', 'category': 'category',
+  // 备注（其余字段忽略：盈亏、涨幅等为计算字段）
   '备注': 'notes', 'notes': 'notes',
 };
 
@@ -32,9 +43,11 @@ interface ParsedRow {
 
 type ImportStatus = 'idle' | 'preview' | 'importing' | 'done' | 'error';
 
-// ── CSV 模板下载 ────────────────────────────────────────────────
+interface ImportPageProps { onImportDone?: () => void; }
+
+// ── CSV 模板下载（使用券商常见列名）──────────────────────────────
 const downloadTemplate = () => {
-  const csv = '名称,代码,类别,股数,均价,现价,备注\n贵州茅台,600519,消费,10,1800,1850,白酒龙头\n苹果,AAPL,海外,50,170,180,美股科技\n';
+  const csv = '代码,名称,类别,持有数量,单位成本,最新价,备注\n600519,贵州茅台,消费,10,1800,1850,白酒龙头\nAAPL,苹果,海外,50,170,180,美股科技\n';
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'holdings_template.csv'; a.click();
@@ -83,7 +96,8 @@ const parseXLSX = async (file: File): Promise<ParsedRow[]> => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-export const ImportPage: React.FC = () => {
+export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
+  const { fetchPortfolio, fetchHoldings } = usePortfolioStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [rows, setRows]       = useState<ParsedRow[]>([]);
   const [status, setStatus]   = useState<ImportStatus>('idle');
@@ -132,6 +146,11 @@ export const ImportPage: React.FC = () => {
     }
     setResult({ ok, fail });
     setStatus('done');
+    // 刷新数据
+    await fetchPortfolio();
+    await fetchHoldings();
+    // 3 秒后自动跳回资产配置页
+    if (ok > 0) setTimeout(() => onImportDone?.(), 2500);
   };
 
   const reset = () => { setStatus('idle'); setRows([]); setFileName(''); };
@@ -180,12 +199,12 @@ export const ImportPage: React.FC = () => {
               <p className="text-xs font-medium text-stone-400 mb-2">支持的列格式</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                 {[
-                  ['名称 / name', '必填'],
-                  ['代码 / symbol', '必填'],
-                  ['股数 / shares', '必填'],
-                  ['均价 / avgCost', '必填'],
-                  ['类别 / category', '可选'],
-                  ['现价 / currentPrice', '可选'],
+                  ['名称 / 证券名称', '必填'],
+                  ['代码 / 证券代码', '必填'],
+                  ['持有数量 / 数量', '必填'],
+                  ['单位成本 / 均价', '必填'],
+                  ['最新价 / 现价',   '可选'],
+                  ['类别 / 板块',     '可选'],
                 ].map(([col, req]) => (
                   <div key={col} className="flex items-center justify-between">
                     <span className="text-xs text-stone-500 font-mono">{col}</span>

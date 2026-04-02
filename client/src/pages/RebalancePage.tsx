@@ -15,7 +15,7 @@ export const RebalancePage: React.FC = () => {
   if (isLoadingRebalance) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -24,17 +24,17 @@ export const RebalancePage: React.FC = () => {
     return (
       <div className="space-y-4 animate-fade-in">
         <div className="flex items-center gap-2 mb-4">
-          <Calculator className="w-5 h-5 text-blue-400" />
-          <h2 className="text-lg font-bold text-white">再平衡计算器</h2>
+          <Calculator className="w-5 h-5 text-[#D97757]" />
+          <h2 className="text-lg font-bold text-stone-900">再平衡计算器</h2>
         </div>
 
         <Card>
           <CardContent className="pt-6 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center">
-              <Calculator className="w-8 h-8 text-slate-600" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-100 flex items-center justify-center">
+              <Calculator className="w-8 h-8 text-stone-400" />
             </div>
-            <p className="text-slate-400 mb-2">暂无调仓建议</p>
-            <p className="text-sm text-slate-500">您的投资组合状态良好</p>
+            <p className="text-stone-500 mb-2">暂无调仓建议</p>
+            <p className="text-sm text-stone-400">您的投资组合状态良好</p>
           </CardContent>
         </Card>
 
@@ -52,7 +52,7 @@ export const RebalancePage: React.FC = () => {
       case 'low': return 'text-emerald-400';
       case 'medium': return 'text-amber-400';
       case 'high': return 'text-red-400';
-      default: return 'text-slate-400';
+      default: return 'text-stone-500';
     }
   };
 
@@ -69,11 +69,11 @@ export const RebalancePage: React.FC = () => {
     <div className="space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
-        <Calculator className="w-5 h-5 text-blue-400" />
-        <h2 className="text-lg font-bold text-white">再平衡计算器</h2>
+        <Calculator className="w-5 h-5 text-[#D97757]" />
+        <h2 className="text-lg font-bold text-stone-900">再平衡计算器</h2>
       </div>
 
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-stone-500">
         基于技术面评级与市场情况的调仓建议
       </p>
 
@@ -93,7 +93,7 @@ export const RebalancePage: React.FC = () => {
             >
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-white">{rec.name}</span>
+                  <span className="font-medium text-stone-900">{rec.name}</span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded ${
                     rec.action === 'buy'
                       ? 'bg-emerald-500/20 text-emerald-400'
@@ -104,7 +104,7 @@ export const RebalancePage: React.FC = () => {
                     {rec.reason}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-stone-400">
                   评级: {rec.actionText} | 市场: {rec.marketReason}
                 </p>
               </div>
@@ -114,7 +114,7 @@ export const RebalancePage: React.FC = () => {
                 }`}>
                   {rec.action === 'buy' ? '+' : '-'}{formatCurrency(rec.suggestedAmount)}
                 </p>
-                <p className="text-[10px] text-slate-500">
+                <p className="text-[10px] text-stone-400">
                   {rec.isNew ? '新建仓' : rec.action === 'reduce' ? '减仓50%' : rec.action === 'sell' ? '清仓' : '买入'}
                 </p>
               </div>
@@ -122,17 +122,17 @@ export const RebalancePage: React.FC = () => {
           ))}
 
           {/* Summary */}
-          <div className="border-t border-slate-700/50 pt-3 mt-3">
+          <div className="border-t border-stone-200 pt-3 mt-3">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">预计卖出</span>
+              <span className="text-stone-500">预计卖出</span>
               <span className="text-red-400 font-mono-number">{formatCurrency(summary.totalSell)}</span>
             </div>
             <div className="flex justify-between text-sm mt-1">
-              <span className="text-slate-400">预计买入</span>
+              <span className="text-stone-500">预计买入</span>
               <span className="text-emerald-400 font-mono-number">{formatCurrency(summary.totalBuy)}</span>
             </div>
-            <div className="flex justify-between text-sm mt-2 pt-2 border-t border-slate-700/30">
-              <span className="text-slate-400">净调整</span>
+            <div className="flex justify-between text-sm mt-2 pt-2 border-t border-stone-200/30">
+              <span className="text-stone-500">净调整</span>
               <span className={`font-mono-number font-bold ${
                 summary.netAdjustment >= 0 ? 'text-emerald-400' : 'text-red-400'
               }`}>
@@ -150,19 +150,19 @@ export const RebalancePage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-3 bg-slate-800/50 rounded-lg">
+            <div className="text-center p-3 bg-stone-100 rounded-lg">
               <p className={`text-2xl font-bold font-mono-number ${
                 portfolioHealth >= 80 ? 'text-emerald-400' : portfolioHealth >= 60 ? 'text-amber-400' : 'text-red-400'
               }`}>
                 {portfolioHealth}
               </p>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">健康度</p>
+              <p className="text-xs text-stone-400 uppercase tracking-wider">健康度</p>
             </div>
-            <div className="text-center p-3 bg-slate-800/50 rounded-lg">
+            <div className="text-center p-3 bg-stone-100 rounded-lg">
               <p className={`text-xl font-bold ${getRiskColor(riskLevel)}`}>
                 {getRiskText(riskLevel)}
               </p>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">风险等级</p>
+              <p className="text-xs text-stone-400 uppercase tracking-wider">风险等级</p>
             </div>
           </div>
         </CardContent>

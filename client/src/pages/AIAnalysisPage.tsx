@@ -20,7 +20,7 @@ export const AIAnalysisPage: React.FC = () => {
   if (isLoadingAnalysis) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -28,10 +28,10 @@ export const AIAnalysisPage: React.FC = () => {
   if (analysisError || !analysis) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-slate-400 text-sm">{analysisError || '暂无分析数据'}</p>
+        <p className="text-stone-500 text-sm">{analysisError || '暂无分析数据'}</p>
         <button
           onClick={fetchAnalysis}
-          className="px-4 py-2 text-sm bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 rounded-lg hover:bg-indigo-500/20 transition-colors"
+          className="px-4 py-2 text-sm bg-[rgba(217,119,87,0.08)] border border-[#D97757]/30 text-[#D97757] rounded-lg hover:bg-[rgba(217,119,87,0.12)] transition-colors"
         >
           重试
         </button>
@@ -67,12 +67,12 @@ export const AIAnalysisPage: React.FC = () => {
     <div className="space-y-4 animate-fade-in">
       {/* AI Header */}
       <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-purple-500/10 to-indigo-500/5 border border-purple-500/20 rounded-xl">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/25">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-stone-900 font-bold text-lg shadow-lg shadow-indigo-500/25">
           AI
         </div>
         <div>
-          <h2 className="text-lg font-bold text-white">智能评估报告</h2>
-          <p className="text-sm text-slate-400">基于技术面+市场面双维度评估</p>
+          <h2 className="text-lg font-bold text-stone-900">智能评估报告</h2>
+          <p className="text-sm text-stone-500">基于技术面+市场面双维度评估</p>
         </div>
       </div>
 
@@ -83,7 +83,7 @@ export const AIAnalysisPage: React.FC = () => {
             <p className={`text-3xl font-bold font-mono-number mb-1 ${getHealthColor(healthScore)}`}>
               {healthScore}
             </p>
-            <p className="text-xs text-slate-500 uppercase tracking-wider">组合健康度</p>
+            <p className="text-xs text-stone-400 uppercase tracking-wider">组合健康度</p>
             <p className={`text-xs mt-1 ${getHealthColor(healthScore)}`}>
               {getHealthText(healthScore)}
             </p>
@@ -97,8 +97,8 @@ export const AIAnalysisPage: React.FC = () => {
             }`}>
               {summary.weakHoldings > 2 ? '偏高' : '正常'}
             </p>
-            <p className="text-xs text-slate-500 uppercase tracking-wider">集中度风险</p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-stone-400 uppercase tracking-wider">集中度风险</p>
+            <p className="text-xs text-stone-400 mt-1">
               弱势持仓: {summary.weakHoldings}
             </p>
           </CardContent>
@@ -119,13 +119,13 @@ export const AIAnalysisPage: React.FC = () => {
                   <div className="w-14 text-xs" style={{ color: item.color }}>
                     {item.label}
                   </div>
-                  <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
                     <div 
                       className="h-full rounded-full transition-all duration-500"
                       style={{ width: `${percentage}%`, backgroundColor: item.color }}
                     />
                   </div>
-                  <div className="w-8 text-right text-xs text-slate-500">
+                  <div className="w-8 text-right text-xs text-stone-400">
                     {item.count}
                   </div>
                 </div>
@@ -143,13 +143,13 @@ export const AIAnalysisPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           {risks.length === 0 ? (
-            <p className="text-sm text-slate-500">暂无风险警报</p>
+            <p className="text-sm text-stone-400">暂无风险警报</p>
           ) : (
             <div className="space-y-4">
               {risks.map((risk, index) => (
                 <div key={index} className="border-l-2 border-red-500/50 pl-3">
                   <div className="flex justify-between items-start mb-1">
-                    <span className="text-sm text-slate-300">{risk.message}</span>
+                    <span className="text-sm text-stone-600">{risk.message}</span>
                     <span className={`text-xs font-medium px-2 py-0.5 rounded ${
                       risk.severity === 'high' 
                         ? 'bg-red-500/20 text-red-400' 
@@ -159,7 +159,7 @@ export const AIAnalysisPage: React.FC = () => {
                     </span>
                   </div>
                   {risk.holdings && (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-stone-400">
                       {risk.holdings.join('、')}
                     </p>
                   )}
@@ -177,13 +177,13 @@ export const AIAnalysisPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-3 bg-slate-800/50 rounded-lg">
-              <p className="text-2xl font-bold text-white font-mono-number">{summary.totalHoldings}</p>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">总持仓</p>
+            <div className="text-center p-3 bg-stone-100 rounded-lg">
+              <p className="text-2xl font-bold text-stone-900 font-mono-number">{summary.totalHoldings}</p>
+              <p className="text-xs text-stone-400 uppercase tracking-wider">总持仓</p>
             </div>
             <div className="text-center p-3 bg-emerald-500/10 rounded-lg">
               <p className="text-2xl font-bold text-emerald-400 font-mono-number">{summary.strongHoldings}</p>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">强势持仓</p>
+              <p className="text-xs text-stone-400 uppercase tracking-wider">强势持仓</p>
             </div>
           </div>
         </CardContent>

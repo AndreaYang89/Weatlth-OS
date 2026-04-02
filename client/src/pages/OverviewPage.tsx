@@ -35,7 +35,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
   if (isLoadingPortfolio) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -43,10 +43,10 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
   if (portfolioError || !portfolio) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-slate-400 text-sm">{portfolioError || '暂无数据'}</p>
+        <p className="text-stone-400 text-sm">{portfolioError || '暂无数据，请先导入资产'}</p>
         <button
           onClick={fetchPortfolio}
-          className="px-4 py-2 text-sm bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 rounded-lg hover:bg-indigo-500/20 transition-colors"
+          className="px-4 py-2 text-sm bg-[rgba(217,119,87,0.08)] border border-[rgba(217,119,87,0.25)] text-[#D97757] rounded-lg hover:bg-[rgba(217,119,87,0.15)] transition-colors"
         >
           重试
         </button>
@@ -70,8 +70,8 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
       {/* Total Assets Card */}
       <Card>
         <CardContent className="pt-4">
-          <p className="text-sm text-slate-400 mb-1">总资产估值</p>
-          <p className="text-3xl font-bold text-white font-mono-number tracking-tight">
+          <p className="text-sm text-stone-500 mb-1">总资产估值</p>
+          <p className="text-3xl font-bold text-stone-900 font-mono-number tracking-tight">
             {formatCurrency(portfolio.totalAssets)}
           </p>
           <div className="flex items-center gap-3 mt-2">
@@ -83,7 +83,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
               <TrendingUp className="w-3 h-3" />
               {formatCurrency(pnl)} ({formatPercentage(pnlPercent)})
             </span>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-stone-400">
               更新于 {new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
@@ -114,8 +114,8 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[10px] text-slate-500 uppercase tracking-wider">配置</span>
-                <span className="text-xl font-bold text-white font-mono-number">
+                <span className="text-[10px] text-stone-400 uppercase tracking-wider">配置</span>
+                <span className="text-xl font-bold text-stone-900 font-mono-number">
                   {portfolio.allocation.length}类
                 </span>
               </div>
@@ -130,9 +130,9 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
                       className="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-sm text-slate-300">{item.category}</span>
+                    <span className="text-sm text-stone-600">{item.category}</span>
                   </div>
-                  <span className="text-sm font-medium text-white font-mono-number">
+                  <span className="text-sm font-medium text-stone-900 font-mono-number">
                     {item.percentage.toFixed(0)}%
                   </span>
                 </div>
@@ -151,7 +151,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
           <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-amber-400 mb-1">AI评估发现风险</p>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-stone-500">
               单一板块占比过高，建议分散投资。点击查看调仓方案 →
             </p>
           </div>
@@ -162,27 +162,27 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={onAddHolding}
-          className="flex flex-col items-center gap-2 p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl hover:bg-indigo-500/10 hover:border-indigo-500/30 transition-all group"
+          className="flex flex-col items-center gap-2 p-4 bg-stone-100 border border-stone-200 rounded-xl hover:bg-[rgba(217,119,87,0.08)] hover:border-[#D97757]/30 transition-all group"
         >
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500/25 transition-colors">
+          <div className="w-10 h-10 rounded-xl bg-[rgba(217,119,87,0.1)] flex items-center justify-center text-[#D97757] group-hover:bg-[rgba(217,119,87,0.15)] transition-colors">
             <Plus className="w-5 h-5" />
           </div>
           <div className="text-center">
-            <p className="text-sm font-medium text-white">记一笔</p>
-            <p className="text-xs text-slate-500">买入/卖出</p>
+            <p className="text-sm font-medium text-stone-900">记一笔</p>
+            <p className="text-xs text-stone-400">买入/卖出</p>
           </div>
         </button>
 
         <button
           onClick={onNavigateToAI}
-          className="flex flex-col items-center gap-2 p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl hover:bg-purple-500/10 hover:border-purple-500/30 transition-all group"
+          className="flex flex-col items-center gap-2 p-4 bg-stone-100 border border-stone-200 rounded-xl hover:bg-purple-500/10 hover:border-purple-500/30 transition-all group"
         >
           <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center text-purple-400 group-hover:bg-purple-500/25 transition-colors">
             <Sparkles className="w-5 h-5" />
           </div>
           <div className="text-center">
-            <p className="text-sm font-medium text-white">AI诊断</p>
-            <p className="text-xs text-slate-500">智能评估</p>
+            <p className="text-sm font-medium text-stone-900">AI诊断</p>
+            <p className="text-xs text-stone-400">智能评估</p>
           </div>
         </button>
       </div>
@@ -191,10 +191,10 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
       <div className="grid grid-cols-2 gap-3">
         <Card className="text-center">
           <CardContent className="pt-4">
-            <p className="text-2xl font-bold text-white font-mono-number mb-1">
+            <p className="text-2xl font-bold text-stone-900 font-mono-number mb-1">
               {portfolio.riskMetrics.beta.toFixed(2)}
             </p>
-            <p className="text-xs text-slate-500 uppercase tracking-wider">Beta系数</p>
+            <p className="text-xs text-stone-400 uppercase tracking-wider">Beta系数</p>
           </CardContent>
         </Card>
 
@@ -205,7 +205,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
             }`}>
               {portfolio.riskMetrics.sharpeRatio.toFixed(2)}
             </p>
-            <p className="text-xs text-slate-500 uppercase tracking-wider">夏普比率</p>
+            <p className="text-xs text-stone-400 uppercase tracking-wider">夏普比率</p>
           </CardContent>
         </Card>
 
@@ -214,16 +214,16 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
             <p className="text-2xl font-bold text-amber-400 font-mono-number mb-1">
               {portfolio.riskMetrics.maxDrawdown.toFixed(1)}%
             </p>
-            <p className="text-xs text-slate-500 uppercase tracking-wider">最大回撤</p>
+            <p className="text-xs text-stone-400 uppercase tracking-wider">最大回撤</p>
           </CardContent>
         </Card>
 
         <Card className="text-center">
           <CardContent className="pt-4">
-            <p className="text-2xl font-bold text-blue-400 font-mono-number mb-1">
+            <p className="text-2xl font-bold text-[#D97757] font-mono-number mb-1">
               {portfolio.riskMetrics.winRate.toFixed(0)}%
             </p>
-            <p className="text-xs text-slate-500 uppercase tracking-wider">胜率</p>
+            <p className="text-xs text-stone-400 uppercase tracking-wider">胜率</p>
           </CardContent>
         </Card>
       </div>

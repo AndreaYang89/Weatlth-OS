@@ -38,7 +38,7 @@ export const HoldingsPage: React.FC = () => {
   if (isLoadingHoldings) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -48,24 +48,24 @@ export const HoldingsPage: React.FC = () => {
       {/* Rating Legend */}
       <Card className="p-3">
         <div className="flex items-center gap-2 mb-3">
-          <Info className="w-4 h-4 text-blue-400" />
-          <span className="text-sm font-medium text-white">评级说明</span>
+          <Info className="w-4 h-4 text-[#D97757]" />
+          <span className="text-sm font-medium text-stone-900">评级说明</span>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <div className="p-2 bg-slate-800/50 rounded-lg">
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">技术面评级</p>
-            <p className="text-xs text-slate-400">
+          <div className="p-2 bg-stone-100 rounded-lg">
+            <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-1">技术面评级</p>
+            <p className="text-xs text-stone-500">
               <span className="text-emerald-400">多头排列</span> / 
               <span className="text-amber-400">震荡</span> / 
               <span className="text-red-400">破位</span>
             </p>
           </div>
-          <div className="p-2 bg-slate-800/50 rounded-lg">
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">市场热度</p>
-            <p className="text-xs text-slate-400">
+          <div className="p-2 bg-stone-100 rounded-lg">
+            <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-1">市场热度</p>
+            <p className="text-xs text-stone-500">
               <span className="text-amber-400">热门</span> / 
-              <span className="text-slate-400">中性</span> / 
-              <span className="text-slate-600">冷门</span>
+              <span className="text-stone-500">中性</span> / 
+              <span className="text-stone-400">冷门</span>
             </p>
           </div>
         </div>
@@ -79,8 +79,8 @@ export const HoldingsPage: React.FC = () => {
             onClick={() => setActiveFilter(filter.key)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
               activeFilter === filter.key
-                ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30'
-                : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'
+                ? 'bg-indigo-500 text-stone-900 shadow-lg shadow-indigo-500/30'
+                : 'bg-stone-100 text-stone-500 border border-stone-200 hover:bg-stone-200'
             }`}
           >
             {filter.label}
@@ -91,18 +91,18 @@ export const HoldingsPage: React.FC = () => {
       {/* Holdings List */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <Filter className="w-4 h-4 text-blue-400" />
-          <h2 className="text-lg font-bold text-white">持仓评级一览</h2>
-          <span className="text-sm text-slate-500">({filteredHoldings.length})</span>
+          <Filter className="w-4 h-4 text-[#D97757]" />
+          <h2 className="text-lg font-bold text-stone-900">持仓评级一览</h2>
+          <span className="text-sm text-stone-400">({filteredHoldings.length})</span>
         </div>
 
         {filteredHoldings.length === 0 ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center">
-              <Filter className="w-8 h-8 text-slate-600" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-stone-100 flex items-center justify-center">
+              <Filter className="w-8 h-8 text-stone-400" />
             </div>
-            <p className="text-slate-500">暂无持仓数据</p>
-            <p className="text-xs text-slate-600 mt-1">点击"记一笔"添加您的第一笔持仓</p>
+            <p className="text-stone-400">暂无持仓数据</p>
+            <p className="text-xs text-stone-400 mt-1">点击"记一笔"添加您的第一笔持仓</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -125,7 +125,7 @@ const HoldingItem: React.FC<{ holding: Holding }> = ({ holding }) => {
 
   return (
     <div 
-      className={`flex items-center p-3.5 bg-slate-800/40 rounded-xl border border-white/5 cursor-pointer transition-all hover:bg-slate-800/60 hover:border-indigo-500/30 hover:translate-x-0.5 relative overflow-hidden group`}
+      className={`flex items-center p-3.5 bg-stone-100/40 rounded-xl border border-white/5 cursor-pointer transition-all hover:bg-stone-100/60 hover:border-[#D97757]/30 hover:translate-x-0.5 relative overflow-hidden group`}
     >
       {/* Left border indicator */}
       <div 
@@ -148,7 +148,7 @@ const HoldingItem: React.FC<{ holding: Holding }> = ({ holding }) => {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap mb-1">
-          <span className="font-semibold text-white text-sm">{holding.name}</span>
+          <span className="font-semibold text-stone-900 text-sm">{holding.name}</span>
           <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${categoryColors.bg} ${categoryColors.text} border-white/10`}>
             {holding.category}
           </span>
@@ -172,12 +172,12 @@ const HoldingItem: React.FC<{ holding: Holding }> = ({ holding }) => {
         </div>
 
         {/* Details */}
-        <p className="text-xs text-slate-500 font-mono-number">
+        <p className="text-xs text-stone-400 font-mono-number">
           {holding.shares}股 · 成本¥{holding.avgCost.toFixed(2)}
         </p>
 
         {/* Progress bar */}
-        <div className="h-0.5 bg-slate-700 rounded-full mt-1.5 overflow-hidden">
+        <div className="h-0.5 bg-stone-200 rounded-full mt-1.5 overflow-hidden">
           <div 
             className="h-full rounded-full relative overflow-hidden"
             style={{ 
@@ -195,7 +195,7 @@ const HoldingItem: React.FC<{ holding: Holding }> = ({ holding }) => {
         <p className="font-bold text-sm font-mono-number" style={{ color: pnlColor }}>
           {pnl >= 0 ? '+' : ''}{pnlPercent.toFixed(1)}%
         </p>
-        <p className="text-xs text-slate-500 font-mono-number">
+        <p className="text-xs text-stone-400 font-mono-number">
           {formatCurrency(holding.marketValue)}
         </p>
         <p className="text-[10px] mt-1" style={{ color: pnlColor }}>
