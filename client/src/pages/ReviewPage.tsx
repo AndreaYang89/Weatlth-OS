@@ -79,8 +79,8 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ onClose, initialData }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-[#0f172a] border border-white/10 rounded-t-2xl p-5 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
+      <div className="w-full max-w-lg bg-white border border-stone-200 rounded-t-2xl p-5 max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold text-stone-900">
@@ -115,7 +115,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ onClose, initialData }) => {
           <div>
             <label className="text-xs text-stone-500 mb-1.5 block">标题 *</label>
             <input
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-stone-900 placeholder-slate-500 focus:outline-none focus:border-[#D97757]/50"
+              className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-[#D97757]/50"
               placeholder="本次复盘的主题..."
               value={title}
               onChange={e => setTitle(e.target.value)}
@@ -138,7 +138,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ onClose, initialData }) => {
                     type="button"
                     onClick={() => setMood(m)}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border text-xs font-medium transition-all ${
-                      mood === m ? cfg.bg + ' ' + cfg.color : 'border-white/10 text-stone-400 hover:border-white/20'
+                      mood === m ? cfg.bg + ' ' + cfg.color : 'border-stone-200 text-stone-400 hover:border-stone-300'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -153,7 +153,7 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ onClose, initialData }) => {
           <div>
             <label className="text-xs text-stone-500 mb-1.5 block">复盘内容</label>
             <textarea
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-stone-900 placeholder-slate-500 focus:outline-none focus:border-[#D97757]/50 resize-none"
+              className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-[#D97757]/50 resize-none"
               placeholder="记录你的思考、决策依据、市场判断..."
               rows={6}
               value={content}
@@ -187,7 +187,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, onEdit, onDelete }) => {
   const MoodIcon = moodCfg.icon;
 
   return (
-    <div className="rounded-2xl bg-white/[0.03] border border-white/[0.07] overflow-hidden">
+    <div className="rounded-2xl bg-white border border-stone-200 overflow-hidden shadow-sm">
       {/* 卡片头部 */}
       <button
         className="w-full text-left px-4 pt-4 pb-3"
@@ -225,20 +225,20 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, onEdit, onDelete }) => {
 
       {/* 展开内容 */}
       {expanded && (
-        <div className="px-4 pb-4 border-t border-white/[0.06] pt-3 space-y-4">
+        <div className="px-4 pb-4 border-t border-stone-100 pt-3 space-y-4">
           {/* 持仓快照 */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-white/[0.04] p-2.5 text-center">
+            <div className="rounded-xl bg-stone-50 p-2.5 text-center">
               <p className="text-[10px] text-stone-400 mb-0.5">总资产</p>
               <p className="text-xs font-semibold text-stone-900">{formatMoney(snap.totalAssets)}</p>
             </div>
-            <div className="rounded-xl bg-white/[0.04] p-2.5 text-center">
+            <div className="rounded-xl bg-stone-50 p-2.5 text-center">
               <p className="text-[10px] text-stone-400 mb-0.5">浮动盈亏</p>
               <p className={`text-xs font-semibold ${snap.unrealizedPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                 {formatMoney(snap.unrealizedPnL)}
               </p>
             </div>
-            <div className="rounded-xl bg-white/[0.04] p-2.5 text-center">
+            <div className="rounded-xl bg-stone-50 p-2.5 text-center">
               <p className="text-[10px] text-stone-400 mb-0.5">持仓数</p>
               <p className="text-xs font-semibold text-stone-900">{snap.holdingsCount}</p>
             </div>

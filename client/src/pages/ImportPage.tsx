@@ -77,12 +77,24 @@ const normalizeRow = (raw: Record<string, string>): ParsedRow => {
   return row;
 };
 
+// ── 跳过汇总行（券商导出中的合计/汇总行）──────────────────────
+const SKIP_KEYWORDS = ['合计', '汇总', '小计', '总计', '合并', 'Total', 'total'];
+const isSummaryRow = (raw: Record<string, string>): boolean => {
+  return Object.values(raw).some(v =>
+    SKIP_KEYWORDS.some(kw => String(v ?? '').trim().includes(kw))
+  );
+};
+
 // ── 解析 CSV ──────────────────────────────────────────────────
 const parseCSV = (file: File): Promise<ParsedRow[]> =>
   new Promise(resolve => {
     Papa.parse(file, {
       header: true, skipEmptyLines: true,
-      complete: r => resolve((r.data as Record<string,string>[]).map(normalizeRow)),
+      complete: r => resolve(
+        (r.data as Record<string,string>[])
+          .filter(row => !isSummaryRow(row))
+          .map(normalizeRow)
+      ),
     });
   });
 
@@ -92,7 +104,7 @@ const parseXLSX = async (file: File): Promise<ParsedRow[]> => {
   const wb = XLSX.read(buf);
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json<Record<string,string>>(ws, { defval: '' });
-  return rows.map(normalizeRow);
+  return rows.filter(row => !isSummaryRow(row)).map(normalizeRow);
 };
 
 // ═══════════════════════════════════════════════════════════════

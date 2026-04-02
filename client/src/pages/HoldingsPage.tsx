@@ -79,7 +79,7 @@ export const HoldingsPage: React.FC = () => {
             onClick={() => setActiveFilter(filter.key)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
               activeFilter === filter.key
-                ? 'bg-indigo-500 text-stone-900 shadow-lg shadow-indigo-500/30'
+                ? 'bg-[#D97757] text-white shadow-lg shadow-[#D97757]/30'
                 : 'bg-stone-100 text-stone-500 border border-stone-200 hover:bg-stone-200'
             }`}
           >
@@ -156,7 +156,7 @@ const HoldingItem: React.FC<{ holding: Holding }> = ({ holding }) => {
             {ratingInfo.text}
             <span className="ml-1 text-amber-400 text-[10px]">
               {'★'.repeat(holding.starRating)}
-              <span className="text-slate-700">{'★'.repeat(5 - holding.starRating)}</span>
+              <span className="text-stone-300">{'★'.repeat(5 - holding.starRating)}</span>
             </span>
           </span>
         </div>
