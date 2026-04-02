@@ -231,7 +231,7 @@ export interface CreateReviewData {
 }
 
 // UI Types
-export type TabType = 'overview' | 'holdings' | 'ai' | 'rebalance' | 'review';
+export type TabType = 'overview' | 'holdings' | 'ai' | 'rebalance' | 'review' | 'import' | 'settings';
 
 export interface Toast {
   id: string;

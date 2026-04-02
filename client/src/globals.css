@@ -2,60 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Claude 暖色系 CSS 变量 ───────────────────────────────────── */
 @layer base {
   :root {
-    --background: 222 47% 4%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 6%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 6%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 239 84% 67%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 239 84% 67%;
-    --radius: 0.75rem;
+    /* backgrounds */
+    --background:   25 25% 10%;   /* #1C1917 */
+    --card:         25 10% 16%;   /* #292524 */
+    --popover:      25 10% 16%;
+    /* text */
+    --foreground:        30 14% 97%;   /* #FAFAF9 */
+    --card-foreground:   30 14% 97%;
+    --popover-foreground:30 14% 97%;
+    --muted-foreground:  25 6%  63%;   /* #A8A29E */
+    /* accent – Claude orange-coral */
+    --primary:           17 62% 59%;  /* #D97757 */
+    --primary-foreground:30 14% 97%;
+    --secondary:         25 9%  20%;
+    --secondary-foreground: 30 14% 97%;
+    --muted:             25 9%  20%;
+    --accent:            17 62% 59%;
+    --accent-foreground: 30 14% 97%;
+    /* states */
+    --destructive:       0 84% 60%;
+    --destructive-foreground: 30 14% 97%;
+    --border:  30 8% 27%;    /* #44403C */
+    --input:   30 8% 27%;
+    --ring:    17 62% 59%;
+    --radius:  0.75rem;
   }
 }
 
 @layer base {
-  * {
-    border-color: hsl(var(--border));
-  }
-  
-  html {
-    scroll-behavior: smooth;
-  }
-  
+  * { border-color: hsl(var(--border)); }
+
+  html { scroll-behavior: smooth; }
+
   body {
-    background-color: #020617;
+    background-color: #1C1917;
     color: hsl(var(--foreground));
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+      'Microsoft YaHei', sans-serif;
     line-height: 1.5;
   }
-  
-  /* 科技感背景网格 */
+
+  /* 暖色调背景纹理 */
   body::before {
     content: '';
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: 
-      radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.15) 1px, transparent 0),
-      linear-gradient(180deg, rgba(99, 102, 241, 0.03) 0%, transparent 50%, rgba(6, 182, 212, 0.03) 100%);
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(217,119,87,0.08) 1px, transparent 0),
+      linear-gradient(180deg, rgba(217,119,87,0.03) 0%, transparent 60%,
+        rgba(180,100,60,0.03) 100%);
     background-size: 40px 40px, 100% 100%;
     z-index: -2;
     pointer-events: none;
@@ -64,65 +64,50 @@
 
 @layer utilities {
   .glass {
-    @apply bg-[rgba(15,23,42,0.65)] backdrop-blur-xl border border-white/[0.08];
+    background-color: rgba(41,37,36,0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.07);
   }
-  
+
   .glass-hover {
-    @apply hover:border-[rgba(99,102,241,0.3)] hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] transition-all duration-300;
+    transition: border-color 0.3s, box-shadow 0.3s;
   }
-  
+  .glass-hover:hover {
+    border-color: rgba(217,119,87,0.25);
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+  }
+
   .text-gradient {
-    @apply bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent;
+    background: linear-gradient(135deg, #D97757, #E8A882);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
-  
-  .glow-indigo {
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+
+  .glow-claude {
+    box-shadow: 0 0 20px rgba(217,119,87,0.2);
   }
-  
-  .glow-indigo-strong {
-    box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
-  }
-  
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
   .font-mono-number {
-    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+    font-family: 'SF Mono','Cascadia Code','Fira Code',monospace;
     letter-spacing: -0.02em;
   }
 }
 
-/* Custom scrollbar for webkit browsers */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: rgba(28,25,23,0.5); }
+::-webkit-scrollbar-thumb { background: rgba(217,119,87,0.25); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(217,119,87,0.45); }
 
-::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
-}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.5} }
+.animate-blink { animation: blink 2s infinite; }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.3);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.5);
-}
-
-/* Animation utilities */
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.animate-blink {
-  animation: blink 2s infinite;
-}
+@keyframes fade-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.animate-fade-in { animation: fade-in 0.3s ease-out; }

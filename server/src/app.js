@@ -69,6 +69,7 @@ app.use(`${apiPrefix}/analysis`, require('./routes/analysis'));
 app.use(`${apiPrefix}/rebalance`, require('./routes/rebalance'));
 app.use(`${apiPrefix}/transactions`, require('./routes/transactions'));
 app.use(`${apiPrefix}/reviews`, require('./routes/reviews'));
+app.use(`${apiPrefix}/config`, require('./routes/config'));
 
 // Health Check
 app.get('/health', (req, res) => {
