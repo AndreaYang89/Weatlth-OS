@@ -26,16 +26,30 @@ interface OverviewPageProps {
 }
 
 export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavigateToAI }) => {
-  const { portfolio, topHoldings, fetchPortfolio, isLoadingPortfolio } = usePortfolioStore();
+  const { portfolio, topHoldings, fetchPortfolio, isLoadingPortfolio, portfolioError } = usePortfolioStore();
 
   useEffect(() => {
     fetchPortfolio();
   }, []);
 
-  if (isLoadingPortfolio || !portfolio) {
+  if (isLoadingPortfolio) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (portfolioError || !portfolio) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-slate-400 text-sm">{portfolioError || '暂无数据'}</p>
+        <button
+          onClick={fetchPortfolio}
+          className="px-4 py-2 text-sm bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 rounded-lg hover:bg-indigo-500/20 transition-colors"
+        >
+          重试
+        </button>
       </div>
     );
   }

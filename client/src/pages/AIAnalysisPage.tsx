@@ -11,16 +11,30 @@ import {
 } from 'lucide-react';
 
 export const AIAnalysisPage: React.FC = () => {
-  const { analysis, fetchAnalysis, runAnalysis, isLoadingAnalysis } = usePortfolioStore();
+  const { analysis, fetchAnalysis, runAnalysis, isLoadingAnalysis, analysisError } = usePortfolioStore();
 
   useEffect(() => {
     fetchAnalysis();
   }, []);
 
-  if (isLoadingAnalysis || !analysis) {
+  if (isLoadingAnalysis) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (analysisError || !analysis) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-slate-400 text-sm">{analysisError || '暂无分析数据'}</p>
+        <button
+          onClick={fetchAnalysis}
+          className="px-4 py-2 text-sm bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 rounded-lg hover:bg-indigo-500/20 transition-colors"
+        >
+          重试
+        </button>
       </div>
     );
   }
