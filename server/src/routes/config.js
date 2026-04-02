@@ -54,4 +54,52 @@ router.put('/', (req, res) => {
   res.json({ status: 'success', message: '配置已更新', data: currentConfig });
 });
 
+// GET /api/v1/config/status — 诊断接口：显示当前运行时 provider 和 key 状态
+router.get('/status', (req, res) => {
+  const aiProvider    = process.env.AI_PROVIDER            || 'mock';
+  const marketProvider = process.env.MARKET_DATA_PROVIDER  || 'mock';
+
+  const status = {
+    ai: {
+      provider:  aiProvider,
+      isReal:    aiProvider !== 'mock',
+      keyPresent: {
+        deepseek:  !!process.env.DEEPSEEK_API_KEY,
+        anthropic: !!process.env.ANTHROPIC_API_KEY,
+        openai:    !!process.env.OPENAI_API_KEY,
+      },
+      activeKeyOk: (() => {
+        if (aiProvider === 'deepseek')  return !!process.env.DEEPSEEK_API_KEY;
+        if (aiProvider === 'claude')    return !!process.env.ANTHROPIC_API_KEY;
+        if (aiProvider === 'openai')    return !!process.env.OPENAI_API_KEY;
+        return true; // mock 不需要 key
+      })(),
+    },
+    market: {
+      provider:  marketProvider,
+      isReal:    marketProvider !== 'mock',
+      keyPresent: {
+        tushare:   !!process.env.TUSHARE_API_TOKEN,
+        akshare:   !!process.env.AKSHARE_BRIDGE_URL,
+      },
+      activeKeyOk: (() => {
+        if (marketProvider === 'tushare') return !!process.env.TUSHARE_API_TOKEN;
+        if (marketProvider === 'akshare') return !!process.env.AKSHARE_BRIDGE_URL;
+        return true; // mock / tencent / eastmoney 不需要 key
+      })(),
+    },
+    warning: [],
+  };
+
+  // 生成警告
+  if (status.ai.isReal && !status.ai.activeKeyOk) {
+    status.warning.push(`⚠️  AI provider 设为 "${aiProvider}" 但对应 API Key 未配置，将降级为 mock`);
+  }
+  if (status.market.isReal && !status.market.activeKeyOk) {
+    status.warning.push(`⚠️  行情 provider 设为 "${marketProvider}" 但对应 Token 未配置，将降级为 mock`);
+  }
+
+  res.json({ status: 'success', data: status });
+});
+
 module.exports = router;

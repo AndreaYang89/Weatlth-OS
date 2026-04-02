@@ -1,19 +1,18 @@
 /**
  * AI Analysis Service
  *
- * 支持的 provider（通过 AI_PROVIDER 环境变量或配置页切换，运行时生效）:
+ * 支持的 provider（通过配置页或 AI_PROVIDER 环境变量切换，运行时动态生效）:
  *   - 'mock'     : 基于 symbol 哈希的确定性模拟分析（默认）
- *   - 'deepseek' : DeepSeek V3 / R1（兼容 OpenAI SDK）
- *   - 'claude'   : Anthropic Claude
- *   - 'openai'   : OpenAI GPT-4
- *
- * ⚠️  PROVIDER 和 API Key 在每次调用时从 process.env 动态读取，
- *     配置页保存后无需重启即可生效。
+ *   - 'deepseek' : DeepSeek V3 / R1（兼容 OpenAI SDK，npm install openai）
+ *   - 'claude'   : Anthropic Claude（npm install @anthropic-ai/sdk）
+ *   - 'openai'   : OpenAI GPT-4o（npm install openai）
  */
 
 const mockAI = require('../utils/aiAnalysis');
+const OpenAI = require('openai');
+const { Anthropic } = require('@anthropic-ai/sdk');
 
-// ─── Prompt 模板（各 provider 共用）────────────────────────────────────────────
+// ─── Prompt 模板 ──────────────────────────────────────────────────────────────
 function buildHoldingPrompt(holding) {
   const pnlPct = holding.avgCost > 0
     ? ((holding.currentPrice - holding.avgCost) / holding.avgCost * 100).toFixed(2)
@@ -28,27 +27,33 @@ function buildHoldingPrompt(holding) {
 - 当前价格：${holding.currentPrice} 元
 - 持仓盈亏：${pnlPct}%
 
-请严格以 JSON 格式返回，包含以下字段（不要有任何额外文字）：
+请严格以 JSON 格式返回，不要有任何多余文字：
 {
   "technicalRating": "strong|good|neutral|bad|weak",
   "technicalDetail": "技术面简要说明（10字以内）",
   "marketRating": "hot|warm|cool|cold",
   "marketDetail": "市场热度简要说明（10字以内）",
   "overallRating": "strong-buy|buy|neutral|reduce|sell",
-  "starRating": 1~5的整数,
+  "starRating": 1到5的整数,
   "strategy": "持有|定投|加仓|减仓|止损|观望",
-  "aiScore": 0~100的整数
+  "aiScore": 0到100的整数
 }`;
 }
 
-// ─── JSON 解析工具（带降级）──────────────────────────────────────────────────────
-function safeParseJSON(text, holding) {
+// ─── JSON 解析（带降级）───────────────────────────────────────────────────────
+function safeParseJSON(text, holding, providerName) {
   try {
-    // 有些模型会在 JSON 前后加 markdown 代码块
     const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-    return JSON.parse(cleaned);
-  } catch {
-    console.warn(`[AIService] JSON 解析失败，降级为 mock。原始内容: ${text?.slice(0, 100)}`);
+    const parsed = JSON.parse(cleaned);
+    // 校验必要字段
+    const required = ['technicalRating', 'marketRating', 'overallRating', 'starRating', 'strategy', 'aiScore'];
+    const missing = required.filter(k => parsed[k] === undefined);
+    if (missing.length > 0) throw new Error(`缺少字段: ${missing.join(', ')}`);
+    console.log(`[AIService:${providerName}] ${holding.symbol} 分析完成 → ${parsed.overallRating} (${parsed.aiScore}分)`);
+    return parsed;
+  } catch (err) {
+    console.error(`[AIService:${providerName}] JSON解析失败，降级为mock。错误: ${err.message}`);
+    console.error(`[AIService:${providerName}] 原始响应: ${String(text).slice(0, 200)}`);
     return mockAI.analyzeHolding(holding);
   }
 }
@@ -56,19 +61,18 @@ function safeParseJSON(text, holding) {
 // ─── DeepSeek Provider ────────────────────────────────────────────────────────
 const deepseekProvider = {
   async analyzeHolding(holding) {
-    const { default: OpenAI } = await import('openai');
-    const client = new OpenAI({
-      apiKey: process.env.DEEPSEEK_API_KEY,
-      baseURL: 'https://api.deepseek.com',
-    });
+    const key = process.env.DEEPSEEK_API_KEY;
+    if (!key) throw new Error('DEEPSEEK_API_KEY 未配置');
+    const client = new OpenAI({ apiKey: key, baseURL: 'https://api.deepseek.com' });
     const model = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
+    console.log(`[AIService:deepseek] 调用 ${model} 分析 ${holding.symbol}...`);
     const response = await client.chat.completions.create({
       model,
       messages: [{ role: 'user', content: buildHoldingPrompt(holding) }],
       response_format: { type: 'json_object' },
       max_tokens: 300,
     });
-    return safeParseJSON(response.choices[0].message.content, holding);
+    return safeParseJSON(response.choices[0].message.content, holding, 'deepseek');
   },
   analyzePortfolio: mockAI.analyzePortfolio,
   generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations,
@@ -77,15 +81,17 @@ const deepseekProvider = {
 // ─── Claude Provider ──────────────────────────────────────────────────────────
 const claudeProvider = {
   async analyzeHolding(holding) {
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client = new Anthropic.default({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const key = process.env.ANTHROPIC_API_KEY;
+    if (!key) throw new Error('ANTHROPIC_API_KEY 未配置');
+    const client = new Anthropic({ apiKey: key });
     const model = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
+    console.log(`[AIService:claude] 调用 ${model} 分析 ${holding.symbol}...`);
     const message = await client.messages.create({
       model,
       max_tokens: 300,
       messages: [{ role: 'user', content: buildHoldingPrompt(holding) }],
     });
-    return safeParseJSON(message.content[0].text, holding);
+    return safeParseJSON(message.content[0].text, holding, 'claude');
   },
   analyzePortfolio: mockAI.analyzePortfolio,
   generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations,
@@ -94,16 +100,18 @@ const claudeProvider = {
 // ─── OpenAI Provider ──────────────────────────────────────────────────────────
 const openaiProvider = {
   async analyzeHolding(holding) {
-    const { default: OpenAI } = await import('openai');
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const key = process.env.OPENAI_API_KEY;
+    if (!key) throw new Error('OPENAI_API_KEY 未配置');
+    const client = new OpenAI({ apiKey: key });
     const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    console.log(`[AIService:openai] 调用 ${model} 分析 ${holding.symbol}...`);
     const response = await client.chat.completions.create({
       model,
       messages: [{ role: 'user', content: buildHoldingPrompt(holding) }],
       response_format: { type: 'json_object' },
       max_tokens: 300,
     });
-    return safeParseJSON(response.choices[0].message.content, holding);
+    return safeParseJSON(response.choices[0].message.content, holding, 'openai');
   },
   analyzePortfolio: mockAI.analyzePortfolio,
   generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations,
@@ -117,26 +125,25 @@ const providers = {
   openai:   openaiProvider,
 };
 
+function getProviderName() {
+  return process.env.AI_PROVIDER || 'mock';
+}
+
 function getProvider() {
-  // 每次调用时动态读取，配置页切换后无需重启
-  const name = process.env.AI_PROVIDER || 'mock';
-  const p = providers[name];
-  if (!p) {
-    console.warn(`[AIService] 未知 provider "${name}"，回退到 mock`);
-    return providers.mock;
-  }
-  return p;
+  const name = getProviderName();
+  return providers[name] || (console.warn(`[AIService] 未知 provider "${name}"，回退到 mock`) || providers.mock);
 }
 
 // ─── 公开 API ─────────────────────────────────────────────────────────────────
 module.exports = {
-  getProviderName: () => process.env.AI_PROVIDER || 'mock',
+  getProviderName,
 
   async analyzeHolding(holding) {
+    const name = getProviderName();
     try {
       return await getProvider().analyzeHolding(holding);
     } catch (err) {
-      console.error(`[AIService] analyzeHolding 失败 (${process.env.AI_PROVIDER})，降级为 mock:`, err.message);
+      console.error(`[AIService:${name}] analyzeHolding 失败，降级为 mock: ${err.message}`);
       return mockAI.analyzeHolding(holding);
     }
   },
