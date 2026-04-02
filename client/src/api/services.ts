@@ -74,6 +74,9 @@ export const holdingsApi = {
 
   refreshPrices: () =>
     apiClient.post<ApiResponse<{ updated: number; failed: number }>>('/holdings/refresh-prices'),
+
+  importHoldings: (items: CreateHoldingData[]) =>
+    apiClient.post<ApiResponse<{ created: number; updated: number; failed: number }>>('/holdings/import', items),
 };
 
 // Analysis Services

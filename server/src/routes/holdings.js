@@ -246,6 +246,58 @@ router.get('/:id', auth, holdingIdValidation, validate(holdingIdValidation), asy
   }
 });
 
+// @route   POST /api/v1/holdings/import
+// @desc    Bulk upsert holdings from CSV/Excel import
+// @access  Private
+router.post('/import', auth, async (req, res) => {
+  try {
+    const items = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ status: 'error', message: 'No items provided' });
+    }
+
+    let created = 0, updated = 0, failed = 0;
+
+    for (const item of items) {
+      try {
+        const { symbol, name, category, shares, avgCost, currentPrice, notes } = item;
+        const sym = String(symbol || '').trim().toUpperCase();
+        if (!sym || !name || shares <= 0 || avgCost <= 0) { failed++; continue; }
+
+        const price = currentPrice || avgCost;
+        const marketValue = price * shares;
+        const patch = { name, category: category || '其他', shares, avgCost, currentPrice: price, marketValue };
+        if (notes !== undefined) patch.notes = notes;
+
+        const existing = await Holding.findOne({ user: req.user._id, symbol: sym });
+        if (existing) {
+          Object.assign(existing, patch);
+          const analysis = analyzeHolding(existing);
+          Object.assign(existing, analysis);
+          await existing.save();
+          updated++;
+        } else {
+          const holding = new Holding({ user: req.user._id, symbol: sym, ...patch });
+          const analysis = analyzeHolding(holding);
+          Object.assign(holding, analysis);
+          await holding.save();
+          const Transaction = require('../models').Transaction;
+          await new Transaction({
+            user: req.user._id, holding: holding._id, symbol: sym,
+            type: 'buy', shares, price: avgCost, amount: avgCost * shares, notes: 'Import'
+          }).save();
+          created++;
+        }
+      } catch (e) { failed++; }
+    }
+
+    res.json({ status: 'success', data: { created, updated, failed } });
+  } catch (error) {
+    console.error('Import holdings error:', error);
+    res.status(500).json({ status: 'error', message: 'Server error' });
+  }
+});
+
 // @route   POST /api/v1/holdings
 // @desc    Create new holding
 // @access  Private

@@ -145,18 +145,17 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
 
   const doImport = async () => {
     setStatus('importing');
-    let ok = 0, fail = 0;
-    for (const row of validRows) {
-      try {
-        await holdingsApi.createHolding({
-          name: row.name, symbol: row.symbol, category: row.category,
-          shares: row.shares, avgCost: row.avgCost,
-          currentPrice: row.currentPrice, notes: row.notes,
-        });
-        ok++;
-      } catch { fail++; }
+    try {
+      const res = await holdingsApi.importHoldings(validRows.map(row => ({
+        name: row.name, symbol: row.symbol, category: row.category,
+        shares: row.shares, avgCost: row.avgCost,
+        currentPrice: row.currentPrice, notes: row.notes,
+      })));
+      const { created = 0, updated = 0, failed = 0 } = res.data.data ?? {};
+      setResult({ ok: created + updated, fail: failed });
+    } catch {
+      setResult({ ok: 0, fail: validRows.length });
     }
-    setResult({ ok, fail });
     setStatus('done');
     // 刷新数据
     await fetchPortfolio();
@@ -192,9 +191,9 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
               }`}
             >
               <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={onFileChange} />
-              <FileSpreadsheet className="w-10 h-10 text-stone-600 mx-auto mb-3" />
-              <p className="text-sm font-medium text-stone-300">拖入文件或点击选择</p>
-              <p className="text-xs text-stone-600 mt-1">支持 .csv · .xlsx · .xls</p>
+              <FileSpreadsheet className="w-10 h-10 text-stone-400 mx-auto mb-3" />
+              <p className="text-sm font-medium text-stone-600">拖入文件或点击选择</p>
+              <p className="text-xs text-stone-400 mt-1">支持 .csv · .xlsx · .xls</p>
             </div>
 
             {/* Template download */}
@@ -207,8 +206,8 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
             </button>
 
             {/* Format guide */}
-            <div className="p-3 bg-stone-800/40 rounded-lg border border-stone-700/50">
-              <p className="text-xs font-medium text-stone-400 mb-2">支持的列格式</p>
+            <div className="p-3 bg-stone-50 rounded-lg border border-stone-200">
+              <p className="text-xs font-medium text-stone-500 mb-2">支持的列格式</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                 {[
                   ['名称 / 证券名称', '必填'],
@@ -220,7 +219,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
                 ].map(([col, req]) => (
                   <div key={col} className="flex items-center justify-between">
                     <span className="text-xs text-stone-500 font-mono">{col}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${req === '必填' ? 'bg-[rgba(217,119,87,0.15)] text-[#D97757]' : 'bg-stone-800 text-stone-600'}`}>{req}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${req === '必填' ? 'bg-[rgba(217,119,87,0.15)] text-[#D97757]' : 'bg-stone-200 text-stone-500'}`}>{req}</span>
                   </div>
                 ))}
               </div>
