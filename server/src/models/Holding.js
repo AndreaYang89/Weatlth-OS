@@ -107,6 +107,12 @@ const holdingSchema = new mongoose.Schema({
     type: String,
     enum: ['manual', 'auto', 'mock'],
     default: 'manual'
+  },
+  // 止盈止损提醒
+  alertTriggered: {
+    type: String,
+    enum: ['none', 'takeProfit', 'stopLoss'],
+    default: 'none'
   }
 }, {
   timestamps: true

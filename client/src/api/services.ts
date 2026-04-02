@@ -127,6 +127,15 @@ export const reviewApi = {
     apiClient.delete<ApiResponse<void>>(`/reviews/${id}`),
 };
 
+// Transaction Services
+export const transactionsApi = {
+  getTransactions: (params?: { page?: number; limit?: number; symbol?: string; type?: 'buy' | 'sell' }) =>
+    apiClient.get<ApiResponse<{ transactions: Transaction[]; pagination: { total: number; page: number; limit: number; totalPages: number } }>>('/transactions', { params }),
+
+  getTransaction: (id: string) =>
+    apiClient.get<ApiResponse<{ transaction: Transaction }>>(`/transactions/${id}`),
+};
+
 // Health Check
 export const healthApi = {
   check: () => 

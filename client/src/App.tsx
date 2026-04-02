@@ -6,6 +6,7 @@ import { ToastContainer } from '@/components/ui/Toast';
 import { AddHoldingModal } from '@/components/AddHoldingModal';
 import { OverviewPage } from '@/pages/OverviewPage';
 import { HoldingsPage } from '@/pages/HoldingsPage';
+import { TransactionsPage } from '@/pages/TransactionsPage';
 import { AIAnalysisPage } from '@/pages/AIAnalysisPage';
 import { RebalancePage } from '@/pages/RebalancePage';
 import { ReviewPage } from '@/pages/ReviewPage';
@@ -18,14 +19,15 @@ function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const pageTitles: Record<TabType, string> = {
-    overview: '资产配置', holdings: '持仓明细', ai: 'AI评估',
+    overview: '资产配置', holdings: '持仓明细', transactions: '交易流水', ai: 'AI评估',
     rebalance: '调仓计算', review: '复盘日记', import: '导入资产', settings: '系统配置',
   };
 
   const renderPage = () => {
     switch (activeTab) {
       case 'overview':  return <OverviewPage onAddHolding={() => setIsAddModalOpen(true)} onNavigateToAI={() => setActiveTab('ai')} />;
-      case 'holdings':  return <HoldingsPage />;
+      case 'holdings':      return <HoldingsPage />;
+      case 'transactions':  return <TransactionsPage />;
       case 'ai':        return <AIAnalysisPage />;
       case 'rebalance': return <RebalancePage />;
       case 'review':    return <ReviewPage />;

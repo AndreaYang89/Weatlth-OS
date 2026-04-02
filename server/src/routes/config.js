@@ -8,7 +8,9 @@ let currentConfig = {
   aiProvider:         process.env.AI_PROVIDER          || 'mock',
   anthropicApiKey:    process.env.ANTHROPIC_API_KEY    ? '***已配置***' : '',
   openaiApiKey:       process.env.OPENAI_API_KEY       ? '***已配置***' : '',
+  deepseekApiKey:     process.env.DEEPSEEK_API_KEY     ? '***已配置***' : '',
   akshareBridgeUrl:   process.env.AKSHARE_BRIDGE_URL   || '',
+  tushareApiToken:    process.env.TUSHARE_API_TOKEN    ? '***已配置***' : '',
 };
 
 // GET /api/v1/config — 读取当前配置（供前端展示）
@@ -20,7 +22,8 @@ router.get('/', (req, res) => {
 router.put('/', (req, res) => {
   const allowed = [
     'marketDataProvider', 'priceRefreshCron', 'aiProvider',
-    'anthropicApiKey', 'openaiApiKey', 'akshareBridgeUrl',
+    'anthropicApiKey', 'openaiApiKey', 'deepseekApiKey',
+    'akshareBridgeUrl', 'tushareApiToken',
   ];
 
   for (const key of allowed) {
@@ -33,7 +36,9 @@ router.put('/', (req, res) => {
         aiProvider:         'AI_PROVIDER',
         anthropicApiKey:    'ANTHROPIC_API_KEY',
         openaiApiKey:       'OPENAI_API_KEY',
+        deepseekApiKey:     'DEEPSEEK_API_KEY',
         akshareBridgeUrl:   'AKSHARE_BRIDGE_URL',
+        tushareApiToken:    'TUSHARE_API_TOKEN',
       }[key];
       if (envKey && req.body[key] && !req.body[key].startsWith('***')) {
         process.env[envKey] = req.body[key];

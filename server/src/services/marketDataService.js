@@ -82,6 +82,49 @@ const mockProvider = {
 //   }
 // };
 
+// ─── TODO: Tushare Pro Provider ───────────────────────────────────────────────
+// 需要在 .env 中设置: TUSHARE_API_TOKEN=your_token
+// 注意: Tushare Pro 的 daily 接口为日线行情（非实时），适合收盘后更新持仓成本参考价
+//
+// const tushareProvider = {
+//   async getPrice(symbol, _basePrice) {
+//     const axios = require('axios');
+//     const token = process.env.TUSHARE_API_TOKEN;
+//     // Tushare ts_code 格式: 上交所 600519.SH, 深交所 000001.SZ
+//     const exchange = symbol.startsWith('6') ? 'SH' : 'SZ';
+//     const tsCode = `${symbol}.${exchange}`;
+//     const { data } = await axios.post('https://api.tushare.pro', {
+//       api_name: 'daily',
+//       token,
+//       params: { ts_code: tsCode, limit: 1 },
+//       fields: 'ts_code,close,change,pct_chg',
+//     }, { timeout: 8000 });
+//     if (!data.data || !data.data.items || data.data.items.length === 0) {
+//       throw new Error(`Tushare 未返回 ${tsCode} 数据`);
+//     }
+//     // items[0] 对应 fields 顺序: [ts_code, close, change, pct_chg]
+//     const [, close, change, pctChg] = data.data.items[0];
+//     return {
+//       price: parseFloat(close),
+//       change: parseFloat(change),
+//       changePercent: parseFloat(pctChg),
+//       source: 'tushare',
+//       updatedAt: new Date(),
+//     };
+//   },
+//   async getBatchPrices(symbolBasePairs) {
+//     const results = new Map();
+//     for (const { symbol, basePrice } of symbolBasePairs) {
+//       try {
+//         results.set(symbol, await this.getPrice(symbol, basePrice));
+//       } catch (err) {
+//         console.error(`[Tushare] ${symbol} 获取失败:`, err.message);
+//       }
+//     }
+//     return results;
+//   }
+// };
+
 // ─── TODO: AKShare Bridge Provider ──────────────────────────────────────────
 // 需要在本地运行一个 Python FastAPI 服务暴露 AKShare 接口
 // const akshareProvider = {
@@ -100,8 +143,9 @@ const mockProvider = {
 // ─── Provider 注册表 ──────────────────────────────────────────────────────────
 const providers = {
   mock: mockProvider,
-  // tencent: tencentProvider,    // ← 取消注释并设置 MARKET_DATA_PROVIDER=tencent
+  // tencent: tencentProvider,     // ← 取消注释并设置 MARKET_DATA_PROVIDER=tencent
   // eastmoney: eastmoneyProvider, // ← 取消注释并设置 MARKET_DATA_PROVIDER=eastmoney
+  // tushare: tushareProvider,     // ← 取消注释并设置 MARKET_DATA_PROVIDER=tushare
   // akshare: akshareProvider,     // ← 取消注释并设置 MARKET_DATA_PROVIDER=akshare
 };
 

@@ -8,15 +8,17 @@ import {
   getValueColor,
   getCategoryColor 
 } from '@/utils/format';
-import { 
-  TrendingUp, 
-  Plus, 
-  Sparkles, 
+import {
+  TrendingUp,
+  Plus,
+  Sparkles,
   AlertTriangle,
   Activity,
   BarChart3,
   Target,
-  Percent
+  Percent,
+  Bell,
+  ShieldAlert
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
@@ -26,7 +28,7 @@ interface OverviewPageProps {
 }
 
 export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavigateToAI }) => {
-  const { portfolio, topHoldings, fetchPortfolio, isLoadingPortfolio, portfolioError } = usePortfolioStore();
+  const { portfolio, topHoldings, holdings, fetchPortfolio, isLoadingPortfolio, portfolioError } = usePortfolioStore();
 
   useEffect(() => {
     fetchPortfolio();
@@ -58,6 +60,10 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
   const pnlPercent = portfolio.unrealizedPnLPercent;
   const isPositive = pnl >= 0;
 
+  // Alert summary
+  const tpAlerts = holdings.filter(h => h.alertTriggered === 'takeProfit');
+  const slAlerts = holdings.filter(h => h.alertTriggered === 'stopLoss');
+
   // Prepare chart data
   const chartData = portfolio.allocation.map(item => ({
     name: item.category,
@@ -67,6 +73,24 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
 
   return (
     <div className="space-y-4 animate-fade-in">
+      {/* Price Alert Banners */}
+      {tpAlerts.length > 0 && (
+        <div className="flex items-center gap-2.5 px-3.5 py-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <Target className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+          <p className="text-xs text-emerald-700 font-medium">
+            <span className="font-bold">{tpAlerts.map(h => h.name).join('、')}</span> 已触及止盈价，前往持仓查看
+          </p>
+        </div>
+      )}
+      {slAlerts.length > 0 && (
+        <div className="flex items-center gap-2.5 px-3.5 py-3 bg-red-50 border border-red-200 rounded-xl">
+          <ShieldAlert className="w-4 h-4 text-red-500 flex-shrink-0 animate-pulse" />
+          <p className="text-xs text-red-700 font-medium">
+            <span className="font-bold">{slAlerts.map(h => h.name).join('、')}</span> 已触及止损价，建议及时处理
+          </p>
+        </div>
+      )}
+
       {/* Total Assets Card */}
       <Card>
         <CardContent className="pt-4">

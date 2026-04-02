@@ -9,12 +9,14 @@ import apiClient from '@/api/client';
 
 // ── 类型 ─────────────────────────────────────────────────────────
 interface ConfigState {
-  marketDataProvider: 'mock' | 'tencent' | 'eastmoney' | 'akshare';
+  marketDataProvider: 'mock' | 'tencent' | 'eastmoney' | 'akshare' | 'tushare';
   priceRefreshCron: string;
-  aiProvider: 'mock' | 'claude' | 'openai';
+  aiProvider: 'mock' | 'claude' | 'openai' | 'deepseek';
   anthropicApiKey: string;
   openaiApiKey: string;
+  deepseekApiKey: string;
   akshareBridgeUrl: string;
+  tushareApiToken: string;
 }
 
 const DEFAULT: ConfigState = {
@@ -23,7 +25,9 @@ const DEFAULT: ConfigState = {
   aiProvider: 'mock',
   anthropicApiKey: '',
   openaiApiKey: '',
+  deepseekApiKey: '',
   akshareBridgeUrl: '',
+  tushareApiToken: '',
 };
 
 // ── 子组件：Select ───────────────────────────────────────────────
@@ -158,6 +162,7 @@ export const SettingsPage: React.FC = () => {
                   { value: 'mock',      label: 'Mock（模拟 ±2% 随机波动）', badge: '默认' },
                   { value: 'tencent',   label: '腾讯行情 API' },
                   { value: 'eastmoney', label: '东方财富 API' },
+                  { value: 'tushare',   label: 'Tushare Pro API' },
                   { value: 'akshare',   label: 'AKShare（需本地 Python 桥）' },
                 ]}
                 desc="切换到真实 API 后，取消 server/src/services/marketDataService.js 中对应注释即可"
@@ -173,6 +178,15 @@ export const SettingsPage: React.FC = () => {
                   { value: '0 9,12,15 * * 1-5',   label: '工作日 9/12/15 点' },
                 ]}
               />
+              {config.marketDataProvider === 'tushare' && (
+                <ApiKeyInput
+                  label="Tushare API Token"
+                  value={config.tushareApiToken}
+                  onChange={set('tushareApiToken')}
+                  placeholder="在 tushare.pro 注册后获取"
+                  desc="前往 tushare.pro 注册并在个人中心获取 Token"
+                />
+              )}
               {config.marketDataProvider === 'akshare' && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-stone-400">AKShare Bridge URL</label>
@@ -207,13 +221,23 @@ export const SettingsPage: React.FC = () => {
                 value={config.aiProvider}
                 onChange={set('aiProvider')}
                 options={[
-                  { value: 'mock',   label: 'Mock（确定性模拟分析）', badge: '默认' },
-                  { value: 'claude', label: 'Claude (Anthropic)' },
-                  { value: 'openai', label: 'OpenAI (GPT-4)' },
+                  { value: 'mock',     label: 'Mock（确定性模拟分析）', badge: '默认' },
+                  { value: 'deepseek', label: 'DeepSeek (V3 / R1)' },
+                  { value: 'claude',   label: 'Claude (Anthropic)' },
+                  { value: 'openai',   label: 'OpenAI (GPT-4)' },
                 ]}
                 desc="切换后取消 server/src/services/aiService.js 中对应注释并填写 API Key"
               />
 
+              {config.aiProvider === 'deepseek' && (
+                <ApiKeyInput
+                  label="DeepSeek API Key"
+                  value={config.deepseekApiKey}
+                  onChange={set('deepseekApiKey')}
+                  placeholder="sk-..."
+                  desc="前往 platform.deepseek.com 获取 API Key，支持 deepseek-chat (V3) 和 deepseek-reasoner (R1)"
+                />
+              )}
               {config.aiProvider === 'claude' && (
                 <ApiKeyInput
                   label="Anthropic API Key"
@@ -248,11 +272,13 @@ export const SettingsPage: React.FC = () => {
         <CardContent>
           <div className="space-y-2">
             {[
-              { label: '行情来源', value: config.marketDataProvider, active: config.marketDataProvider !== 'mock' },
-              { label: 'AI 来源',  value: config.aiProvider,         active: config.aiProvider !== 'mock' },
-              { label: '刷新频率', value: config.priceRefreshCron,   active: true },
-              { label: 'Claude Key', value: config.anthropicApiKey ? '已配置 ✓' : '未配置', active: !!config.anthropicApiKey },
-              { label: 'OpenAI Key', value: config.openaiApiKey ? '已配置 ✓' : '未配置',  active: !!config.openaiApiKey },
+              { label: '行情来源',      value: config.marketDataProvider,                              active: config.marketDataProvider !== 'mock' },
+              { label: 'AI 来源',       value: config.aiProvider,                                      active: config.aiProvider !== 'mock' },
+              { label: '刷新频率',      value: config.priceRefreshCron,                                active: true },
+              { label: 'DeepSeek Key',  value: config.deepseekApiKey  ? '已配置 ✓' : '未配置',        active: !!config.deepseekApiKey },
+              { label: 'Claude Key',    value: config.anthropicApiKey ? '已配置 ✓' : '未配置',        active: !!config.anthropicApiKey },
+              { label: 'OpenAI Key',    value: config.openaiApiKey    ? '已配置 ✓' : '未配置',        active: !!config.openaiApiKey },
+              { label: 'Tushare Token', value: config.tushareApiToken ? '已配置 ✓' : '未配置',        active: !!config.tushareApiToken },
             ].map(({ label, value, active }) => (
               <div key={label} className="flex items-center justify-between py-1.5 border-b border-stone-800/60 last:border-0">
                 <span className="text-xs text-stone-500">{label}</span>

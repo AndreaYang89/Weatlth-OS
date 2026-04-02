@@ -51,6 +51,14 @@ async function refreshAllPrices() {
     for (const holding of holdings) {
       const priceData = priceMap.get(holding.symbol);
       if (priceData && priceData.price > 0) {
+        // 检查止盈止损
+        let alertTriggered = 'none';
+        if (holding.takeProfit && priceData.price >= holding.takeProfit) {
+          alertTriggered = 'takeProfit';
+        } else if (holding.stopLoss && priceData.price <= holding.stopLoss) {
+          alertTriggered = 'stopLoss';
+        }
+
         bulkOps.push({
           updateOne: {
             filter: { _id: holding._id },
@@ -59,7 +67,8 @@ async function refreshAllPrices() {
                 currentPrice: priceData.price,
                 marketValue: parseFloat((priceData.price * holding.shares).toFixed(2)),
                 lastPriceUpdate: priceData.updatedAt,
-                priceSource: priceData.source
+                priceSource: priceData.source,
+                alertTriggered
               }
             }
           }

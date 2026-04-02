@@ -20,6 +20,47 @@ const mockAI = require('../utils/aiAnalysis');
 
 const PROVIDER = process.env.AI_PROVIDER || 'mock';
 
+// ─── TODO: DeepSeek Provider ─────────────────────────────────────────────────
+// 需要安装: npm install openai   (DeepSeek 兼容 OpenAI SDK)
+// 并在 .env 中设置: DEEPSEEK_API_KEY=sk-...
+//
+// const deepseekProvider = {
+//   async analyzeHolding(holding) {
+//     const OpenAI = require('openai');
+//     const client = new OpenAI({
+//       apiKey: process.env.DEEPSEEK_API_KEY,
+//       baseURL: 'https://api.deepseek.com',
+//     });
+//     const prompt = `
+//       分析以下持仓，给出技术面评级、市场面评级、综合评级和操作建议。
+//       持仓信息:
+//       - 代码: ${holding.symbol}
+//       - 名称: ${holding.name}
+//       - 板块: ${holding.category}
+//       - 持仓成本: ${holding.avgCost}
+//       - 当前价格: ${holding.currentPrice}
+//       - 持仓盈亏: ${((holding.currentPrice - holding.avgCost) / holding.avgCost * 100).toFixed(2)}%
+//
+//       请以 JSON 格式返回，包含以下字段:
+//       technicalRating (strong/good/neutral/bad/weak), technicalDetail (中文说明),
+//       marketRating (hot/warm/cool/cold), marketDetail (中文说明),
+//       overallRating (strong-buy/buy/neutral/reduce/sell),
+//       starRating (1-5), strategy (持有/定投/加仓/减仓/止损/观望), aiScore (0-100)
+//     `;
+//     const model = process.env.DEEPSEEK_MODEL || 'deepseek-chat'; // 或 'deepseek-reasoner' (R1)
+//     const response = await client.chat.completions.create({
+//       model,
+//       messages: [{ role: 'user', content: prompt }],
+//       response_format: { type: 'json_object' },
+//       max_tokens: 500,
+//     });
+//     return JSON.parse(response.choices[0].message.content);
+//   },
+//
+//   analyzePortfolio: mockAI.analyzePortfolio,
+//   generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations,
+// };
+
 // ─── TODO: Claude Provider ────────────────────────────────────────────────────
 // 需要安装: npm install @anthropic-ai/sdk
 // 并在 .env 中设置: ANTHROPIC_API_KEY=sk-ant-...
@@ -85,8 +126,9 @@ const providers = {
     analyzePortfolio: mockAI.analyzePortfolio,
     generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations,
   },
-  // claude: claudeProvider,  // ← 取消注释并设置 AI_PROVIDER=claude
-  // openai: openaiProvider,  // ← 取消注释并设置 AI_PROVIDER=openai
+  // deepseek: deepseekProvider, // ← 取消注释并设置 AI_PROVIDER=deepseek
+  // claude: claudeProvider,     // ← 取消注释并设置 AI_PROVIDER=claude
+  // openai: openaiProvider,     // ← 取消注释并设置 AI_PROVIDER=openai
 };
 
 function getProvider() {

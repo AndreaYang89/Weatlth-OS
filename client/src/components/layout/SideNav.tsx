@@ -2,7 +2,7 @@ import React from 'react';
 import { usePortfolioStore } from '@/store';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { PieChart, List, Sparkles, Calculator, BookOpen, TrendingUp, Upload, Settings } from 'lucide-react';
+import { PieChart, List, Sparkles, Calculator, BookOpen, TrendingUp, Upload, Settings, Receipt } from 'lucide-react';
 import type { TabType } from '@/types';
 import { formatCurrency } from '@/utils/format';
 
@@ -11,12 +11,13 @@ function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 interface SideNavProps { activeTab: TabType; onTabChange: (tab: TabType) => void; }
 
 const mainNav: { id: TabType; label: string; icon: React.ElementType; desc: string }[] = [
-  { id: 'overview',  label: '资产配置', icon: PieChart,   desc: '总览与图表'  },
-  { id: 'holdings',  label: '持仓明细', icon: List,       desc: '持仓列表'    },
-  { id: 'ai',        label: 'AI 评估',  icon: Sparkles,   desc: '智能分析'    },
-  { id: 'rebalance', label: '调仓计算', icon: Calculator, desc: '再平衡建议'  },
-  { id: 'review',    label: '复盘日记', icon: BookOpen,   desc: '历史记录'    },
-  { id: 'import',    label: '导入资产', icon: Upload,     desc: 'CSV / Excel' },
+  { id: 'overview',      label: '资产配置', icon: PieChart,   desc: '总览与图表'  },
+  { id: 'holdings',      label: '持仓明细', icon: List,       desc: '持仓列表'    },
+  { id: 'transactions',  label: '交易流水', icon: Receipt,    desc: '买卖记录'    },
+  { id: 'ai',            label: 'AI 评估',  icon: Sparkles,   desc: '智能分析'    },
+  { id: 'rebalance',     label: '调仓计算', icon: Calculator, desc: '再平衡建议'  },
+  { id: 'review',        label: '复盘日记', icon: BookOpen,   desc: '历史记录'    },
+  { id: 'import',        label: '导入资产', icon: Upload,     desc: 'CSV / Excel' },
 ];
 
 export const SideNav: React.FC<SideNavProps> = ({ activeTab, onTabChange }) => {

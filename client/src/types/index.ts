@@ -38,6 +38,7 @@ export interface Holding {
   strategy: '持有' | '定投' | '加仓' | '减仓' | '止损' | '观望';
   notes?: string;
   isActive: boolean;
+  alertTriggered?: 'none' | 'takeProfit' | 'stopLoss';
   createdAt: string;
   updatedAt: string;
   // Computed fields
@@ -231,7 +232,7 @@ export interface CreateReviewData {
 }
 
 // UI Types
-export type TabType = 'overview' | 'holdings' | 'ai' | 'rebalance' | 'review' | 'import' | 'settings';
+export type TabType = 'overview' | 'holdings' | 'transactions' | 'ai' | 'rebalance' | 'review' | 'import' | 'settings';
 
 export interface Toast {
   id: string;
