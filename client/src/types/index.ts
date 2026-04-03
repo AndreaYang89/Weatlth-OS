@@ -93,6 +93,17 @@ export interface TopHolding {
   pnlPercent: number;
 }
 
+export interface Recommendation {
+  symbol: string;
+  name: string;
+  action: 'buy' | 'sell' | 'reduce' | 'hold';
+  reason: string;
+  marketReason?: string;
+  suggestedAmount?: number;
+  priority: 'high' | 'medium' | 'low';
+  isNew?: boolean;
+}
+
 // AI Analysis Types
 export interface AIAnalysis {
   healthScore: number;
@@ -100,6 +111,8 @@ export interface AIAnalysis {
   risks: Risk[];
   holdings: AnalyzedHolding[];
   summary: AnalysisSummary;
+  provider?: string;
+  recommendations?: Recommendation[];
 }
 
 export interface RatingDistribution {

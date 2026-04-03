@@ -236,7 +236,11 @@ router.post('/analyze', auth, async (req, res) => {
     for (const holding of holdings) {
       const analysis = await aiService.analyzeHolding(holding);
       Object.assign(holding, analysis);
-      await holding.save();
+      try {
+        await holding.save();
+      } catch (saveErr) {
+        console.error(`[Analysis] ${holding.symbol} 保存失败: ${saveErr.message}`);
+      }
       analyzedHoldings.push({ ...holding.toObject(), ...analysis });
     }
 

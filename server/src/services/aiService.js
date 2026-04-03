@@ -40,6 +40,23 @@ function buildHoldingPrompt(holding) {
 }`;
 }
 
+// ─── Enum 归一化（防止 LLM 返回不合法值导致 Mongoose ValidationError）──────────
+function normalizeAnalysis(parsed) {
+  const validOverall   = ['strong-buy', 'buy', 'neutral', 'reduce', 'sell'];
+  const validTechnical = ['strong', 'good', 'neutral', 'bad', 'weak'];
+  const validMarket    = ['hot', 'warm', 'cool', 'cold'];
+  const validStrategy  = ['持有', '定投', '加仓', '减仓', '止损', '观望'];
+  return {
+    ...parsed,
+    overallRating:   validOverall.includes(parsed.overallRating)     ? parsed.overallRating   : 'neutral',
+    technicalRating: validTechnical.includes(parsed.technicalRating) ? parsed.technicalRating : 'neutral',
+    marketRating:    validMarket.includes(parsed.marketRating)       ? parsed.marketRating    : 'warm',
+    strategy:        validStrategy.includes(parsed.strategy)         ? parsed.strategy        : '持有',
+    starRating:      Math.min(5, Math.max(1, Math.round(Number(parsed.starRating) || 3))),
+    aiScore:         Math.min(100, Math.max(0, Math.round(Number(parsed.aiScore)  || 50))),
+  };
+}
+
 // ─── JSON 解析（带降级）───────────────────────────────────────────────────────
 function safeParseJSON(text, holding, providerName) {
   try {
@@ -49,8 +66,9 @@ function safeParseJSON(text, holding, providerName) {
     const required = ['technicalRating', 'marketRating', 'overallRating', 'starRating', 'strategy', 'aiScore'];
     const missing = required.filter(k => parsed[k] === undefined);
     if (missing.length > 0) throw new Error(`缺少字段: ${missing.join(', ')}`);
-    console.log(`[AIService:${providerName}] ${holding.symbol} 分析完成 → ${parsed.overallRating} (${parsed.aiScore}分)`);
-    return parsed;
+    const normalized = normalizeAnalysis(parsed);
+    console.log(`[AIService:${providerName}] ${holding.symbol} 分析完成 → ${normalized.overallRating} (${normalized.aiScore}分)`);
+    return normalized;
   } catch (err) {
     console.error(`[AIService:${providerName}] JSON解析失败，降级为mock。错误: ${err.message}`);
     console.error(`[AIService:${providerName}] 原始响应: ${String(text).slice(0, 200)}`);

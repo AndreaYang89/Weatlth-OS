@@ -199,12 +199,23 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   runAnalysis: async () => {
     set({ isLoadingAnalysis: true });
     try {
-      await analysisApi.analyze();
-      await get().fetchAnalysis();
+      const analyzeRes = await analysisApi.analyze();
+      // Fetch stored analysis (per-holding data) then merge provider + recommendations from analyze response
+      const analysisRes = await analysisApi.getAnalysis();
+      const baseAnalysis = analysisRes.data.data!.analysis;
+      const analyzeData = (analyzeRes as any)?.data?.data;
+      set({
+        analysis: {
+          ...baseAnalysis,
+          provider: analyzeData?.analysis?.provider,
+          recommendations: analyzeData?.recommendations,
+        },
+        isLoadingAnalysis: false,
+      });
     } catch (error: any) {
-      set({ 
+      set({
         analysisError: error.response?.data?.message || '分析失败',
-        isLoadingAnalysis: false 
+        isLoadingAnalysis: false
       });
     }
   },
