@@ -120,14 +120,14 @@ const deepseekProvider = {
     const response = await withRetry(
       () => client.chat.completions.create({
         model,
+        // 不传 response_format：DeepSeek 对该参数支持不稳定，可能触发 400 错误
+        // safeParseJSON 的正则提取已能可靠处理纯文本 JSON 输出
         messages: [
           { role: 'system', content: '你是专业的 A 股投资分析师。只输出合法的 JSON 对象，不要任何解释、markdown 或额外文字。' },
           { role: 'user', content: buildHoldingPrompt(holding) },
         ],
-        response_format: { type: 'json_object' },
         max_tokens: 512,
       }),
-      // retries=1：1次重试（共2次），单次超时15s → 最坏30s/holding，不超代理60s限制
       { retries: 1, baseDelayMs: 500, providerName: 'deepseek' }
     );
     const content = response.choices?.[0]?.message?.content;
