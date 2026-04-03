@@ -77,6 +77,9 @@ export const holdingsApi = {
 
   importHoldings: (items: CreateHoldingData[]) =>
     apiClient.post<ApiResponse<{ created: number; updated: number; failed: number }>>('/holdings/import', items),
+
+  classifyHoldings: (items: { symbol: string; name: string }[]) =>
+    apiClient.post<ApiResponse<{ symbol: string; category: string }[]>>('/holdings/classify', items),
 };
 
 // Analysis Services

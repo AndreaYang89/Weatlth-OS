@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X, Download } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X, Download, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { holdingsApi } from '@/api/services';
@@ -29,6 +29,29 @@ const COL_MAP: Record<string, string> = {
 };
 
 const CATEGORY_OPTIONS = ['消费', '新能源', '海外', '互联网', '科技', '金融', '医药', '其他'];
+
+// ── 规则引擎：按代码 + 名称关键词推断板块 ──────────────────────
+function guessCategory(symbol: string, name: string): string {
+  const s = symbol.trim();
+  const n = name.trim();
+  // 纯字母 = 海外股（美股/港股 ADR 等）
+  if (/^[A-Za-z]+$/.test(s)) return '海外';
+  // 港股代码（4-5位纯数字）
+  if (/^\d{4,5}$/.test(s)) return '海外';
+  // 金融
+  if (/银行|证券|保险|信托|期货|基金|券商|资产管理|投资控股|租赁/.test(n)) return '金融';
+  // 医药
+  if (/医药|医疗|生物|制药|药业|健康|医院|基因|疫苗|诊断|试剂|医械/.test(n)) return '医药';
+  // 新能源
+  if (/新能源|光伏|风电|储能|锂电|电池|氢能|充电|太阳能|风能|绿电/.test(n)) return '新能源';
+  // 消费
+  if (/消费|食品|饮料|白酒|啤酒|零售|百货|超市|家居|服装|餐饮|日化|酿酒|乳业/.test(n)) return '消费';
+  // 互联网
+  if (/互联网|网络|游戏|电商|直播|社交|在线|云|SaaS/.test(n)) return '互联网';
+  // 科技
+  if (/科技|芯片|半导体|通信|电子|软件|数字|智能|机器人|航天|卫星|激光|雷达|仪器/.test(n)) return '科技';
+  return '其他';
+}
 
 interface ParsedRow {
   name: string;
@@ -64,7 +87,10 @@ const normalizeRow = (raw: Record<string, string>): ParsedRow => {
   const row: ParsedRow = {
     name:         mapped.name         || '',
     symbol:       mapped.symbol       || '',
-    category:     CATEGORY_OPTIONS.includes(mapped.category) ? mapped.category : '其他',
+    // 优先取文件中已有的类别；否则用规则引擎推断
+    category:     CATEGORY_OPTIONS.includes(mapped.category)
+                    ? mapped.category
+                    : guessCategory(mapped.symbol || '', mapped.name || ''),
     shares:       parseFloat(mapped.shares)       || 0,
     avgCost:      parseFloat(mapped.avgCost)      || 0,
     currentPrice: mapped.currentPrice ? parseFloat(mapped.currentPrice) : undefined,
@@ -116,6 +142,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
   const [fileName, setFileName] = useState('');
   const [result, setResult]   = useState<{ ok: number; fail: number }>({ ok: 0, fail: 0 });
   const [dragging, setDragging] = useState(false);
+  const [classifying, setClassifying] = useState(false);
 
   const handleFile = useCallback(async (file: File) => {
     setFileName(file.name);
@@ -165,6 +192,22 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
   };
 
   const reset = () => { setStatus('idle'); setRows([]); setFileName(''); };
+
+  // AI 重新识别所有"其他"类别的条目
+  const handleClassify = async () => {
+    setClassifying(true);
+    try {
+      const res = await holdingsApi.classifyHoldings(
+        rows.filter(r => !r._error).map(r => ({ symbol: r.symbol, name: r.name }))
+      );
+      const map: Record<string, string> = {};
+      for (const item of (res.data.data ?? [])) map[item.symbol] = item.category;
+      setRows(prev => prev.map(r => map[r.symbol] ? { ...r, category: map[r.symbol] } : r));
+    } catch {
+      // 静默失败，保留规则引擎结果
+    }
+    setClassifying(false);
+  };
 
   // ── 渲染 ──────────────────────────────────────────────────────
   return (
@@ -264,7 +307,17 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
                           <td className="py-2 pr-4 font-medium">{r.name}</td>
                           <td className="py-2 pr-4 font-mono text-stone-400">{r.symbol}</td>
                           <td className="py-2 pr-4">
-                            <span className="px-1.5 py-0.5 bg-stone-800 rounded text-stone-400">{r.category}</span>
+                            <select
+                              value={r.category}
+                              onChange={e => {
+                                const next = [...rows];
+                                const idx = next.findIndex(x => x === r);
+                                if (idx !== -1) { next[idx] = { ...next[idx], category: e.target.value }; setRows(next); }
+                              }}
+                              className="text-xs bg-stone-800 border border-stone-700 text-stone-300 rounded px-1.5 py-0.5 focus:outline-none focus:border-[rgba(217,119,87,0.5)]"
+                            >
+                              {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
                           </td>
                           <td className="py-2 pr-4 font-mono-number">{r.shares}</td>
                           <td className="py-2 pr-4 font-mono-number">{r.avgCost.toFixed(2)}</td>
@@ -301,6 +354,16 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
 
           <div className="flex gap-3">
             <Button variant="secondary" onClick={reset} className="flex-1">取消</Button>
+            <Button
+              variant="secondary"
+              onClick={handleClassify}
+              isLoading={classifying}
+              disabled={classifying || validRows.length === 0}
+              className="flex-1"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              AI 识别类别
+            </Button>
             <Button onClick={doImport} disabled={validRows.length === 0} className="flex-1">
               <Upload className="w-4 h-4 mr-2" />
               导入 {validRows.length} 条

@@ -20,17 +20,22 @@ async function withRetry(fn, { retries = 3, baseDelayMs = 1000, providerName = '
       return await fn();
     } catch (err) {
       const status = err.status || err.statusCode;
+      // 打印完整错误结构，便于诊断
+      console.error(`[AIService:${providerName}] 请求失败 attempt=${attempt}`, {
+        status,
+        code: err.code,
+        message: err.message,
+        errorBody: err.error || err.response?.data || undefined,
+      });
       const isRetryable =
-        status >= 500 ||
+        (status >= 500) ||
         status === 429 ||
         err.code === 'ECONNRESET' ||
         err.code === 'ETIMEDOUT' ||
         err.code === 'ENOTFOUND';
       if (!isRetryable || attempt === retries) throw err;
       const delay = baseDelayMs * Math.pow(2, attempt - 1);
-      console.warn(
-        `[AIService:${providerName}] 第 ${attempt} 次请求失败 (${status || err.code})，${delay}ms 后重试...`
-      );
+      console.warn(`[AIService:${providerName}] ${delay}ms 后重试...`);
       await new Promise(r => setTimeout(r, delay));
     }
   }
@@ -237,7 +242,12 @@ module.exports = {
     try {
       return await getProvider().analyzeHolding(holding);
     } catch (err) {
-      console.error(`[AIService:${name}] analyzeHolding 失败，降级为 mock: ${err.message}`);
+      console.error(`[AIService:${name}] analyzeHolding 最终失败，降级为 mock:`, {
+        message: err.message,
+        status: err.status || err.statusCode,
+        code: err.code,
+        errorBody: err.error || undefined,
+      });
       return mockAI.analyzeHolding(holding);
     }
   },

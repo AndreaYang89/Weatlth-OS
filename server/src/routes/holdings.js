@@ -299,6 +299,119 @@ router.post('/import', auth, async (req, res) => {
   }
 });
 
+// ── 规则引擎（与前端保持一致，作为 AI 前的快速通道）────────────
+const VALID_CATEGORIES = ['消费', '新能源', '海外', '互联网', '科技', '金融', '医药', '其他'];
+function guessCategoryByRule(symbol, name) {
+  if (/^[A-Za-z]+$/.test(symbol)) return '海外';
+  if (/^\d{4,5}$/.test(symbol))   return '海外';
+  if (/银行|证券|保险|信托|期货|基金|券商|资产管理|投资控股|租赁/.test(name))        return '金融';
+  if (/医药|医疗|生物|制药|药业|健康|医院|基因|疫苗|诊断|试剂|医械/.test(name))      return '医药';
+  if (/新能源|光伏|风电|储能|锂电|电池|氢能|充电|太阳能|风能|绿电/.test(name))       return '新能源';
+  if (/消费|食品|饮料|白酒|啤酒|零售|百货|超市|家居|服装|餐饮|日化|酿酒|乳业/.test(name)) return '消费';
+  if (/互联网|网络|游戏|电商|直播|社交|在线|云|SaaS/.test(name))                    return '互联网';
+  if (/科技|芯片|半导体|通信|电子|软件|数字|智能|机器人|航天|卫星|激光|雷达|仪器/.test(name)) return '科技';
+  return null; // 规则拿不准，交给 AI
+}
+
+// @route   POST /api/v1/holdings/classify
+// @desc    批量推断类别（规则优先，规则不确定时调用 AI provider）
+// @access  Private
+router.post('/classify', auth, async (req, res) => {
+  try {
+    const items = req.body; // [{ symbol, name }, ...]
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ status: 'error', message: 'No items' });
+    }
+
+    const needAI = [];
+    const result = items.map((item, idx) => {
+      const sym = String(item.symbol || '').trim();
+      const name = String(item.name || '').trim();
+      const ruled = guessCategoryByRule(sym, name);
+      if (ruled) return { symbol: sym, category: ruled };
+      needAI.push({ idx, sym, name });
+      return { symbol: sym, category: '其他' }; // 占位，后面覆盖
+    });
+
+    // AI 批量分类（仅对规则拿不准的）
+    if (needAI.length > 0) {
+      const provider = process.env.AI_PROVIDER || 'mock';
+      if (provider !== 'mock') {
+        const OpenAI = require('openai');
+        const Anthropic = require('@anthropic-ai/sdk').Anthropic;
+        const prompt = `请将以下股票/资产归入类别。类别只能从这几个中选：${VALID_CATEGORIES.join('、')}。
+以 JSON 数组返回，格式：[{"symbol":"代码","category":"类别"},...]，不要其他文字。
+
+${needAI.map(x => `${x.sym} ${x.name}`).join('\n')}`;
+
+        try {
+          let text = '';
+          if (provider === 'deepseek' || provider === 'kimi') {
+            const key = provider === 'deepseek' ? process.env.DEEPSEEK_API_KEY : process.env.KIMI_API_KEY;
+            const baseURL = provider === 'deepseek' ? 'https://api.deepseek.com' : 'https://api.moonshot.cn/v1';
+            const model = provider === 'deepseek'
+              ? (process.env.DEEPSEEK_MODEL || 'deepseek-chat')
+              : (process.env.KIMI_MODEL || 'moonshot-v1-8k');
+            if (key) {
+              const client = new OpenAI({ apiKey: key, baseURL, timeout: 15000, maxRetries: 0 });
+              const r = await client.chat.completions.create({
+                model,
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: 512,
+              });
+              text = r.choices?.[0]?.message?.content || '';
+            }
+          } else if (provider === 'claude') {
+            const key = process.env.ANTHROPIC_API_KEY;
+            if (key) {
+              const client = new Anthropic({ apiKey: key });
+              const r = await client.messages.create({
+                model: process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001',
+                max_tokens: 512,
+                messages: [{ role: 'user', content: prompt }],
+              });
+              text = r.content[0]?.text || '';
+            }
+          } else if (provider === 'openai') {
+            const key = process.env.OPENAI_API_KEY;
+            if (key) {
+              const client = new OpenAI({ apiKey: key, timeout: 15000, maxRetries: 0 });
+              const r = await client.chat.completions.create({
+                model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+                messages: [{ role: 'user', content: prompt }],
+                response_format: { type: 'json_object' },
+                max_tokens: 512,
+              });
+              text = r.choices?.[0]?.message?.content || '';
+            }
+          }
+
+          if (text) {
+            const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+            const match = cleaned.match(/\[[\s\S]*\]/);
+            if (match) {
+              const aiResult = JSON.parse(match[0]);
+              for (const item of aiResult) {
+                const entry = needAI.find(x => x.sym === item.symbol);
+                if (entry && VALID_CATEGORIES.includes(item.category)) {
+                  result[entry.idx].category = item.category;
+                }
+              }
+            }
+          }
+        } catch (aiErr) {
+          console.warn('[classify] AI 分类失败，使用规则结果:', aiErr.message);
+        }
+      }
+    }
+
+    res.json({ status: 'success', data: result });
+  } catch (error) {
+    console.error('Classify error:', error);
+    res.status(500).json({ status: 'error', message: 'Server error' });
+  }
+});
+
 // @route   POST /api/v1/holdings
 // @desc    Create new holding
 // @access  Private
