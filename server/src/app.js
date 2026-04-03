@@ -35,8 +35,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Static files - serve frontend build in production
+// STATIC_DIR 优先（部署时路径结构可能与开发不同），未设置则按相对路径推算
+const staticDir = process.env.STATIC_DIR || path.join(__dirname, '../../client/dist');
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../client/dist')));
+  console.log(`[Static] serving from: ${staticDir}`);
+  app.use(express.static(staticDir));
 }
 
 // Logging
@@ -101,7 +104,7 @@ app.get('/api', (req, res) => {
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
+    res.sendFile(path.join(staticDir, 'index.html'));
   });
 }
 

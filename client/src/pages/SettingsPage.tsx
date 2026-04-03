@@ -11,10 +11,11 @@ import apiClient from '@/api/client';
 interface ConfigState {
   marketDataProvider: 'mock' | 'tencent' | 'eastmoney' | 'akshare' | 'tushare';
   priceRefreshCron: string;
-  aiProvider: 'mock' | 'claude' | 'openai' | 'deepseek';
+  aiProvider: 'mock' | 'claude' | 'openai' | 'deepseek' | 'kimi';
   anthropicApiKey: string;
   openaiApiKey: string;
   deepseekApiKey: string;
+  kimiApiKey: string;
   akshareBridgeUrl: string;
   tushareApiToken: string;
 }
@@ -26,6 +27,7 @@ const DEFAULT: ConfigState = {
   anthropicApiKey: '',
   openaiApiKey: '',
   deepseekApiKey: '',
+  kimiApiKey: '',
   akshareBridgeUrl: '',
   tushareApiToken: '',
 };
@@ -223,10 +225,11 @@ export const SettingsPage: React.FC = () => {
                 options={[
                   { value: 'mock',     label: 'Mock（确定性模拟分析）', badge: '默认' },
                   { value: 'deepseek', label: 'DeepSeek (V3 / R1)' },
+                  { value: 'kimi',     label: 'Kimi (Moonshot AI)' },
                   { value: 'claude',   label: 'Claude (Anthropic)' },
                   { value: 'openai',   label: 'OpenAI (GPT-4)' },
                 ]}
-                desc="切换后取消 server/src/services/aiService.js 中对应注释并填写 API Key"
+                desc="切换后填写对应 API Key 并保存即可生效"
               />
 
               {config.aiProvider === 'deepseek' && (
@@ -236,6 +239,15 @@ export const SettingsPage: React.FC = () => {
                   onChange={set('deepseekApiKey')}
                   placeholder="sk-..."
                   desc="前往 platform.deepseek.com 获取 API Key，支持 deepseek-chat (V3) 和 deepseek-reasoner (R1)"
+                />
+              )}
+              {config.aiProvider === 'kimi' && (
+                <ApiKeyInput
+                  label="Kimi API Key"
+                  value={config.kimiApiKey}
+                  onChange={set('kimiApiKey')}
+                  placeholder="sk-..."
+                  desc="前往 platform.moonshot.cn 获取 API Key，默认模型 moonshot-v1-8k"
                 />
               )}
               {config.aiProvider === 'claude' && (
@@ -276,6 +288,7 @@ export const SettingsPage: React.FC = () => {
               { label: 'AI 来源',       value: config.aiProvider,                                      active: config.aiProvider !== 'mock' },
               { label: '刷新频率',      value: config.priceRefreshCron,                                active: true },
               { label: 'DeepSeek Key',  value: config.deepseekApiKey  ? '已配置 ✓' : '未配置',        active: !!config.deepseekApiKey },
+              { label: 'Kimi Key',      value: config.kimiApiKey      ? '已配置 ✓' : '未配置',        active: !!config.kimiApiKey },
               { label: 'Claude Key',    value: config.anthropicApiKey ? '已配置 ✓' : '未配置',        active: !!config.anthropicApiKey },
               { label: 'OpenAI Key',    value: config.openaiApiKey    ? '已配置 ✓' : '未配置',        active: !!config.openaiApiKey },
               { label: 'Tushare Token', value: config.tushareApiToken ? '已配置 ✓' : '未配置',        active: !!config.tushareApiToken },

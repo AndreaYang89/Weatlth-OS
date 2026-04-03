@@ -120,7 +120,10 @@ const deepseekProvider = {
     const response = await withRetry(
       () => client.chat.completions.create({
         model,
-        messages: [{ role: 'user', content: buildHoldingPrompt(holding) }],
+        messages: [
+          { role: 'system', content: '你是专业的 A 股投资分析师。只输出合法的 JSON 对象，不要任何解释、markdown 或额外文字。' },
+          { role: 'user', content: buildHoldingPrompt(holding) },
+        ],
         response_format: { type: 'json_object' },
         max_tokens: 512,
       }),
