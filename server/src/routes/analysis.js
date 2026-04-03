@@ -268,7 +268,11 @@ router.post('/analyze', auth, async (req, res) => {
 
     if (portfolio) {
       portfolio.healthScore = stats.healthScore;
-      await portfolio.save();
+      try {
+        await portfolio.save();
+      } catch (saveErr) {
+        console.error('[Analysis] portfolio 保存失败:', saveErr.message);
+      }
     }
 
     res.json({
@@ -288,8 +292,8 @@ router.post('/analyze', auth, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Analyze error:', error);
-    res.status(500).json({ status: 'error', message: 'Server error' });
+    console.error('[Analysis] analyze route error:', error.message, error.stack);
+    res.status(500).json({ status: 'error', message: error.message || 'Server error' });
   }
 });
 

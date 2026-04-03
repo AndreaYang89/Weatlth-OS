@@ -112,7 +112,7 @@ const deepseekProvider = {
     const client = new OpenAI({
       apiKey: key,
       baseURL: 'https://api.deepseek.com',
-      timeout: 30000,   // 30s 超时，防止长时间挂起
+      timeout: 15000,   // 15s 超时：DeepSeek 正常 <5s，留足余量但不超代理限制
       maxRetries: 0,    // 重试由 withRetry 统一管理
     });
     const model = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
@@ -127,9 +127,12 @@ const deepseekProvider = {
         response_format: { type: 'json_object' },
         max_tokens: 512,
       }),
-      { retries: 3, baseDelayMs: 1000, providerName: 'deepseek' }
+      // retries=1：1次重试（共2次），单次超时15s → 最坏30s/holding，不超代理60s限制
+      { retries: 1, baseDelayMs: 500, providerName: 'deepseek' }
     );
-    return safeParseJSON(response.choices[0].message.content, holding, 'deepseek');
+    const content = response.choices?.[0]?.message?.content;
+    if (!content) throw new Error('DeepSeek 返回空 choices');
+    return safeParseJSON(content, holding, 'deepseek');
   },
   analyzePortfolio: mockAI.analyzePortfolio,
   generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations,
