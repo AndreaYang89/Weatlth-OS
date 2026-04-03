@@ -3,14 +3,38 @@
  *
  * 支持的 provider（通过配置页或 AI_PROVIDER 环境变量切换，运行时动态生效）:
  *   - 'mock'     : 基于 symbol 哈希的确定性模拟分析（默认）
- *   - 'deepseek' : DeepSeek V3 / R1（兼容 OpenAI SDK，npm install openai）
- *   - 'claude'   : Anthropic Claude（npm install @anthropic-ai/sdk）
- *   - 'openai'   : OpenAI GPT-4o（npm install openai）
+ *   - 'deepseek' : DeepSeek V3 / R1（兼容 OpenAI SDK）
+ *   - 'kimi'     : Moonshot Kimi（兼容 OpenAI SDK）
+ *   - 'claude'   : Anthropic Claude（@anthropic-ai/sdk）
+ *   - 'openai'   : OpenAI GPT-4o
  */
 
 const mockAI = require('../utils/aiAnalysis');
 const OpenAI = require('openai');
 const { Anthropic } = require('@anthropic-ai/sdk');
+
+// ─── 重试工具（处理 5xx / 429 / 网络抖动）────────────────────────────────────
+async function withRetry(fn, { retries = 3, baseDelayMs = 1000, providerName = '' } = {}) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const status = err.status || err.statusCode;
+      const isRetryable =
+        status >= 500 ||
+        status === 429 ||
+        err.code === 'ECONNRESET' ||
+        err.code === 'ETIMEDOUT' ||
+        err.code === 'ENOTFOUND';
+      if (!isRetryable || attempt === retries) throw err;
+      const delay = baseDelayMs * Math.pow(2, attempt - 1);
+      console.warn(
+        `[AIService:${providerName}] 第 ${attempt} 次请求失败 (${status || err.code})，${delay}ms 后重试...`
+      );
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
 
 // ─── Prompt 模板 ──────────────────────────────────────────────────────────────
 function buildHoldingPrompt(holding) {
@@ -60,7 +84,11 @@ function normalizeAnalysis(parsed) {
 // ─── JSON 解析（带降级）───────────────────────────────────────────────────────
 function safeParseJSON(text, holding, providerName) {
   try {
-    const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+    // 清理 markdown 代码块包裹
+    let cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+    // 提取第一个完整 JSON 对象（防止模型在 JSON 前后附加说明文字）
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) cleaned = match[0];
     const parsed = JSON.parse(cleaned);
     // 校验必要字段
     const required = ['technicalRating', 'marketRating', 'overallRating', 'starRating', 'strategy', 'aiScore'];
@@ -71,7 +99,7 @@ function safeParseJSON(text, holding, providerName) {
     return normalized;
   } catch (err) {
     console.error(`[AIService:${providerName}] JSON解析失败，降级为mock。错误: ${err.message}`);
-    console.error(`[AIService:${providerName}] 原始响应: ${String(text).slice(0, 200)}`);
+    console.error(`[AIService:${providerName}] 原始响应: ${String(text).slice(0, 300)}`);
     return mockAI.analyzeHolding(holding);
   }
 }
@@ -81,16 +109,51 @@ const deepseekProvider = {
   async analyzeHolding(holding) {
     const key = process.env.DEEPSEEK_API_KEY;
     if (!key) throw new Error('DEEPSEEK_API_KEY 未配置');
-    const client = new OpenAI({ apiKey: key, baseURL: 'https://api.deepseek.com' });
+    const client = new OpenAI({
+      apiKey: key,
+      baseURL: 'https://api.deepseek.com',
+      timeout: 30000,   // 30s 超时，防止长时间挂起
+      maxRetries: 0,    // 重试由 withRetry 统一管理
+    });
     const model = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
     console.log(`[AIService:deepseek] 调用 ${model} 分析 ${holding.symbol}...`);
-    const response = await client.chat.completions.create({
-      model,
-      messages: [{ role: 'user', content: buildHoldingPrompt(holding) }],
-      response_format: { type: 'json_object' },
-      max_tokens: 300,
-    });
+    const response = await withRetry(
+      () => client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: buildHoldingPrompt(holding) }],
+        response_format: { type: 'json_object' },
+        max_tokens: 512,
+      }),
+      { retries: 3, baseDelayMs: 1000, providerName: 'deepseek' }
+    );
     return safeParseJSON(response.choices[0].message.content, holding, 'deepseek');
+  },
+  analyzePortfolio: mockAI.analyzePortfolio,
+  generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations,
+};
+
+// ─── Kimi (Moonshot) Provider ─────────────────────────────────────────────────
+const kimiProvider = {
+  async analyzeHolding(holding) {
+    const key = process.env.KIMI_API_KEY;
+    if (!key) throw new Error('KIMI_API_KEY 未配置');
+    const client = new OpenAI({
+      apiKey: key,
+      baseURL: 'https://api.moonshot.cn/v1',
+      timeout: 30000,
+      maxRetries: 0,
+    });
+    const model = process.env.KIMI_MODEL || 'moonshot-v1-8k';
+    console.log(`[AIService:kimi] 调用 ${model} 分析 ${holding.symbol}...`);
+    const response = await withRetry(
+      () => client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: buildHoldingPrompt(holding) }],
+        max_tokens: 512,
+      }),
+      { retries: 3, baseDelayMs: 1000, providerName: 'kimi' }
+    );
+    return safeParseJSON(response.choices[0].message.content, holding, 'kimi');
   },
   analyzePortfolio: mockAI.analyzePortfolio,
   generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations,
@@ -104,11 +167,14 @@ const claudeProvider = {
     const client = new Anthropic({ apiKey: key });
     const model = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
     console.log(`[AIService:claude] 调用 ${model} 分析 ${holding.symbol}...`);
-    const message = await client.messages.create({
-      model,
-      max_tokens: 300,
-      messages: [{ role: 'user', content: buildHoldingPrompt(holding) }],
-    });
+    const message = await withRetry(
+      () => client.messages.create({
+        model,
+        max_tokens: 512,
+        messages: [{ role: 'user', content: buildHoldingPrompt(holding) }],
+      }),
+      { retries: 3, baseDelayMs: 1000, providerName: 'claude' }
+    );
     return safeParseJSON(message.content[0].text, holding, 'claude');
   },
   analyzePortfolio: mockAI.analyzePortfolio,
@@ -120,15 +186,18 @@ const openaiProvider = {
   async analyzeHolding(holding) {
     const key = process.env.OPENAI_API_KEY;
     if (!key) throw new Error('OPENAI_API_KEY 未配置');
-    const client = new OpenAI({ apiKey: key });
+    const client = new OpenAI({ apiKey: key, timeout: 30000, maxRetries: 0 });
     const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
     console.log(`[AIService:openai] 调用 ${model} 分析 ${holding.symbol}...`);
-    const response = await client.chat.completions.create({
-      model,
-      messages: [{ role: 'user', content: buildHoldingPrompt(holding) }],
-      response_format: { type: 'json_object' },
-      max_tokens: 300,
-    });
+    const response = await withRetry(
+      () => client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: buildHoldingPrompt(holding) }],
+        response_format: { type: 'json_object' },
+        max_tokens: 512,
+      }),
+      { retries: 3, baseDelayMs: 1000, providerName: 'openai' }
+    );
     return safeParseJSON(response.choices[0].message.content, holding, 'openai');
   },
   analyzePortfolio: mockAI.analyzePortfolio,
@@ -139,6 +208,7 @@ const openaiProvider = {
 const providers = {
   mock:     { analyzeHolding: mockAI.analyzeHolding, analyzePortfolio: mockAI.analyzePortfolio, generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations },
   deepseek: deepseekProvider,
+  kimi:     kimiProvider,
   claude:   claudeProvider,
   openai:   openaiProvider,
 };
