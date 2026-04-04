@@ -153,6 +153,39 @@ const CURATED_STOCKS = {
   },
 };
 
+const CURATED_KEY_EVENTS = {
+  '600519': [
+    { id: '600519-earnings', symbol: '600519', title: '2026年中报披露窗口', eventDate: '2026-08-20', eventType: 'earnings', description: '市场关注高端白酒动销与利润率表现。' },
+    { id: '600519-dividend', symbol: '600519', title: '年度分红实施', eventDate: '2026-06-18', eventType: 'dividend', description: '延续高现金回报风格。' },
+    { id: '600519-meeting', symbol: '600519', title: '股东大会', eventDate: '2026-05-22', eventType: 'meeting', description: '审议年度经营与分红议案。' },
+  ],
+  '00700': [
+    { id: '00700-earnings', symbol: '00700', title: '季度业绩发布', eventDate: '2026-05-15', eventType: 'earnings', description: '市场聚焦广告与游戏业务恢复节奏。' },
+    { id: '00700-meeting', symbol: '00700', title: '年度股东大会', eventDate: '2026-05-28', eventType: 'meeting', description: '关注回购、资本开支与 AI 投入。' },
+  ],
+  '300750': [
+    { id: '300750-earnings', symbol: '300750', title: '季度业绩交流', eventDate: '2026-04-28', eventType: 'earnings', description: '关注储能与海外订单。' },
+    { id: '300750-other', symbol: '300750', title: '新品技术发布', eventDate: '2026-06-12', eventType: 'other', description: '预计披露新一代电池路线。' },
+  ],
+};
+
+const CURATED_ANALYST_RATINGS = {
+  '600519': [
+    { symbol: '600519', rating: 'buy', targetPrice: 1920, targetPriceLow: 1800, targetPriceHigh: 2100, analyst: '中信证券', date: '2026-03-18' },
+    { symbol: '600519', rating: 'buy', targetPrice: 1880, targetPriceLow: 1750, targetPriceHigh: 2050, analyst: '华泰证券', date: '2026-03-12' },
+    { symbol: '600519', rating: 'hold', targetPrice: 1760, targetPriceLow: 1650, targetPriceHigh: 1900, analyst: '中金公司', date: '2026-03-08' },
+  ],
+  '00700': [
+    { symbol: '00700', rating: 'strong_buy', targetPrice: 510, targetPriceLow: 460, targetPriceHigh: 560, analyst: '摩根士丹利', date: '2026-03-20' },
+    { symbol: '00700', rating: 'buy', targetPrice: 488, targetPriceLow: 430, targetPriceHigh: 540, analyst: '高盛', date: '2026-03-14' },
+    { symbol: '00700', rating: 'buy', targetPrice: 472, targetPriceLow: 420, targetPriceHigh: 520, analyst: '瑞银', date: '2026-03-09' },
+  ],
+  '300750': [
+    { symbol: '300750', rating: 'buy', targetPrice: 245, targetPriceLow: 220, targetPriceHigh: 280, analyst: '国泰海通', date: '2026-03-16' },
+    { symbol: '300750', rating: 'hold', targetPrice: 228, targetPriceLow: 205, targetPriceHigh: 250, analyst: '中信建投', date: '2026-03-10' },
+  ],
+};
+
 const axiosCfg = {
   timeout: 10000,
   headers: {
@@ -617,6 +650,51 @@ const stockDataService = {
         source:    '财经网',
         publishTime: new Date(Date.now() - 172800000).toISOString(),
         sentiment: 'neutral',
+      },
+    ];
+  },
+
+  async getKeyEvents(symbol) {
+    const curated = CURATED_KEY_EVENTS[symbol];
+    if (curated) return curated;
+
+    const meta = getStockMeta(symbol);
+    const name = meta?.name || `股票${symbol}`;
+    return [
+      {
+        id: `${symbol}-earnings`,
+        symbol,
+        title: `${name} 季度业绩窗口`,
+        eventDate: '2026-05-15',
+        eventType: 'earnings',
+        description: '关注收入、利润与管理层指引变化。',
+      },
+      {
+        id: `${symbol}-meeting`,
+        symbol,
+        title: `${name} 投资者交流会`,
+        eventDate: '2026-06-10',
+        eventType: 'meeting',
+        description: '观察公司经营节奏和行业判断。',
+      },
+    ];
+  },
+
+  async getAnalystRatings(symbol) {
+    const curated = CURATED_ANALYST_RATINGS[symbol];
+    if (curated) return curated;
+
+    const quote = await this.getQuote(symbol);
+    const targetPrice = parseFloat((quote.price * 1.12).toFixed(2));
+    return [
+      {
+        symbol,
+        rating: 'hold',
+        targetPrice,
+        targetPriceLow: parseFloat((targetPrice * 0.93).toFixed(2)),
+        targetPriceHigh: parseFloat((targetPrice * 1.08).toFixed(2)),
+        analyst: '综合一致预期',
+        date: new Date().toISOString().slice(0, 10),
       },
     ];
   },

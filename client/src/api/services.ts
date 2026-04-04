@@ -22,6 +22,9 @@ import type {
   StockTechnical,
   StockAIAnalysis,
   StockNews,
+  StockHistoryPoint,
+  StockKeyEvent,
+  StockAnalystRating,
   WatchlistItem,
 } from '@/types';
 
@@ -177,7 +180,13 @@ export const stockApi = {
     apiClient.get<ApiResponse<StockNews[]>>(`/stocks/${symbol}/news`),
 
   getHistory: (symbol: string, period: string = '1y') =>
-    apiClient.get<ApiResponse<unknown[]>>(`/stocks/${symbol}/history`, { params: { period } }),
+    apiClient.get<ApiResponse<StockHistoryPoint[]>>(`/stocks/${symbol}/history`, { params: { period } }),
+
+  getKeyEvents: (symbol: string) =>
+    apiClient.get<ApiResponse<StockKeyEvent[]>>(`/stocks/${symbol}/events`),
+
+  getAnalystRatings: (symbol: string) =>
+    apiClient.get<ApiResponse<StockAnalystRating[]>>(`/stocks/${symbol}/ratings`),
 
   batchQuote: (symbols: string[]) =>
     apiClient.post<ApiResponse<Record<string, StockQuote>>>('/stocks/batch/quote', { symbols }),

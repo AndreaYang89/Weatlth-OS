@@ -309,6 +309,36 @@ router.get('/:symbol/news', async (req, res) => {
   }
 });
 
+router.get('/:symbol/events', async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    if (!isValidSymbol(symbol)) {
+      return res.status(400).json(fail('无效的股票代码'));
+    }
+
+    const data = await stockDataService.getKeyEvents(symbol);
+    res.json(ok(data));
+  } catch (error) {
+    console.error(`stocks/${req.params.symbol}/events error:`, error);
+    res.status(500).json(fail(error.message || '获取关键事件失败'));
+  }
+});
+
+router.get('/:symbol/ratings', async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    if (!isValidSymbol(symbol)) {
+      return res.status(400).json(fail('无效的股票代码'));
+    }
+
+    const data = await stockDataService.getAnalystRatings(symbol);
+    res.json(ok(data));
+  } catch (error) {
+    console.error(`stocks/${req.params.symbol}/ratings error:`, error);
+    res.status(500).json(fail(error.message || '获取机构评级失败'));
+  }
+});
+
 router.get('/:symbol/analysis', async (req, res) => {
   try {
     const { symbol } = req.params;

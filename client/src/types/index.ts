@@ -358,6 +358,34 @@ export interface StockNews {
   sentiment: 'positive' | 'negative' | 'neutral';
 }
 
+export interface StockHistoryPoint {
+  date: string;
+  open: number;
+  close: number;
+  high: number;
+  low: number;
+  volume: number;
+}
+
+export interface StockKeyEvent {
+  id: string;
+  symbol: string;
+  title: string;
+  eventDate: string;
+  eventType: 'earnings' | 'dividend' | 'meeting' | 'other';
+  description?: string;
+}
+
+export interface StockAnalystRating {
+  symbol: string;
+  rating: 'strong_buy' | 'buy' | 'hold' | 'reduce' | 'sell';
+  targetPrice?: number;
+  targetPriceLow?: number;
+  targetPriceHigh?: number;
+  analyst?: string;
+  date: string;
+}
+
 export interface WatchlistItem {
   id: string;
   symbol: string;
