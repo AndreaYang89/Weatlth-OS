@@ -2,7 +2,7 @@ import React from 'react';
 import { usePortfolioStore } from '@/store';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { PieChart, List, Sparkles, Calculator, BookOpen, Receipt } from 'lucide-react';
+import { PieChart, List, Sparkles, Calculator, Eye, Receipt, BookOpen } from 'lucide-react';
 import type { TabType } from '@/types';
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
@@ -16,6 +16,7 @@ const navItems: { id: TabType; label: string; icon: React.ElementType }[] = [
   { id: 'ai',            label: 'AI',   icon: Sparkles   },
   { id: 'rebalance',     label: '计算', icon: Calculator },
   { id: 'review',        label: '复盘', icon: BookOpen   },
+  { id: 'watchlist',     label: '关注', icon: Eye        },
 ];
 
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
@@ -24,7 +25,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/97 backdrop-blur-xl border-t border-stone-200 pb-safe shadow-[0_-1px_12px_rgba(0,0,0,0.06)]">
-      <div className="max-w-lg mx-auto flex justify-around">
+      <div className="max-w-lg mx-auto flex items-center overflow-x-auto scrollbar-hide">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           const Icon = item.icon;
@@ -33,7 +34,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
               key={item.id}
               onClick={() => onTabChange(item.id)}
               className={cn(
-                'flex flex-col items-center gap-1 py-2.5 px-3 relative transition-all duration-200',
+                'flex min-w-[56px] flex-1 flex-col items-center gap-1 py-2.5 px-2 relative transition-all duration-200',
                 isActive ? 'text-[#D97757]' : 'text-stone-400 hover:text-stone-600'
               )}
             >

@@ -7,6 +7,7 @@ const validate = require('../middleware/validate');
 const { analyzeHolding } = require('../utils/aiAnalysis'); // mock，用于初始创建时的快速分析
 const aiService = require('../services/aiService');
 const { refreshAllPrices } = require('../jobs/priceRefresh');
+const { syncHoldingWatchlist } = require('../utils/watchlistSync');
 
 // Validation rules
 const createHoldingValidation = [
@@ -292,6 +293,10 @@ router.post('/import', auth, async (req, res) => {
       } catch (e) { failed++; }
     }
 
+    syncHoldingWatchlist(req.user._id).catch(err => {
+      console.error('[watchlistSync] import sync failed:', err);
+    });
+
     res.json({ status: 'success', data: { created, updated, failed } });
   } catch (error) {
     console.error('Import holdings error:', error);
@@ -467,6 +472,10 @@ router.post('/', auth, createHoldingValidation, validate(createHoldingValidation
     });
     await transaction.save();
 
+    syncHoldingWatchlist(req.user._id).catch(err => {
+      console.error('[watchlistSync] create sync failed:', err);
+    });
+
     res.status(201).json({
       status: 'success',
       message: 'Holding created successfully',
@@ -520,6 +529,10 @@ router.put('/:id', auth, updateHoldingValidation, validate(updateHoldingValidati
 
     await holding.save();
 
+    syncHoldingWatchlist(req.user._id).catch(err => {
+      console.error('[watchlistSync] update sync failed:', err);
+    });
+
     res.json({
       status: 'success',
       message: 'Holding updated successfully',
@@ -553,6 +566,10 @@ router.delete('/:id', auth, async (req, res) => {
 
     holding.isActive = false;
     await holding.save();
+
+    syncHoldingWatchlist(req.user._id).catch(err => {
+      console.error('[watchlistSync] delete sync failed:', err);
+    });
 
     res.json({
       status: 'success',
@@ -624,6 +641,10 @@ router.post('/:id/transaction', auth, transactionValidation, validate(transactio
 
     holding.marketValue = holding.currentPrice * holding.shares;
     await holding.save();
+
+    syncHoldingWatchlist(req.user._id).catch(err => {
+      console.error('[watchlistSync] transaction sync failed:', err);
+    });
 
     res.json({
       status: 'success',

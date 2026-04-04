@@ -36,6 +36,8 @@ export interface Holding {
   overallRating: 'strong-buy' | 'buy' | 'neutral' | 'reduce' | 'sell';
   starRating: number;
   strategy: '持有' | '定投' | '加仓' | '减仓' | '止损' | '观望';
+  stopLoss?: number | null;
+  takeProfit?: number | null;
   notes?: string;
   isActive: boolean;
   alertTriggered?: 'none' | 'takeProfit' | 'stopLoss';
@@ -245,7 +247,140 @@ export interface CreateReviewData {
 }
 
 // UI Types
-export type TabType = 'overview' | 'holdings' | 'transactions' | 'ai' | 'rebalance' | 'review' | 'import' | 'settings';
+export type TabType = 'overview' | 'holdings' | 'transactions' | 'ai' | 'rebalance' | 'review' | 'import' | 'settings' | 'watchlist';
+
+// ── Stock Research Types ─────────────────────────────────────────────────────
+
+export interface Stock {
+  symbol: string;
+  name: string;
+  fullname?: string;
+  industry?: string;
+  market: 'SH' | 'SZ' | 'BJ' | 'HK' | 'US';
+  listDate?: string;
+  type?: string;
+}
+
+export interface StockQuote {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  preClose?: number;
+  volume?: number;
+  amount?: number;
+  turnover?: number;
+  marketCap?: number;
+  pe?: number;
+  pb?: number;
+  high52w?: number;
+  low52w?: number;
+  industry?: string;
+  updateTime?: string;
+}
+
+export interface StockValuation {
+  symbol: string;
+  date?: string;
+  peTtm: number;
+  pb: number;
+  ps?: number;
+  peg?: number;
+  pePercentile: number;
+  pbPercentile: number;
+  peIndustryAvg?: number;
+  pbIndustryAvg?: number;
+}
+
+export interface StockFinancial {
+  symbol: string;
+  reportDate?: string;
+  roe?: number;
+  roa?: number;
+  grossMargin?: number;
+  netMargin?: number;
+  revenueGrowth?: number;
+  profitGrowth?: number;
+  debtRatio?: number;
+  currentRatio?: number;
+  dataAvailable?: boolean;
+  updateTime?: string;
+}
+
+export interface StockTechnical {
+  symbol: string;
+  date?: string;
+  trend: 'up' | 'down' | 'sideways';
+  signal?: 'bullish' | 'bearish' | 'neutral';
+  ma5?: number;
+  ma20?: number;
+  rsi: number;
+  macd?: number;
+  macdSignal?: number;
+  macdHist?: number;
+  bollUpper?: number;
+  bollMiddle?: number;
+  bollLower?: number;
+  support1?: number;
+  support2?: number;
+  resistance1?: number;
+  resistance2?: number;
+  signals?: { type: string; description: string; indicator?: string }[];
+}
+
+export interface StockAIAnalysis {
+  symbol: string;
+  updateTime?: string;
+  overallScore: number;       // 0–100
+  valuationScore: number;
+  technicalScore: number;
+  fundamentalScore: number;
+  recommendation: 'buy' | 'hold' | 'sell';
+  confidence?: number;
+  summary: string;
+  valuationAnalysis?: string;
+  technicalAnalysis?: string;
+  fundamentalAnalysis?: string;
+  risks?: string[];
+}
+
+export interface StockNews {
+  id?: string;
+  title: string;
+  source: string;
+  url?: string;
+  time?: string;
+  publishTime?: string;
+  sentiment: 'positive' | 'negative' | 'neutral';
+}
+
+export interface WatchlistItem {
+  id: string;
+  symbol: string;
+  name: string;
+  group: 'holding' | 'watching' | 'custom';
+  source?: 'manual' | 'holding';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WatchlistItemWithData extends WatchlistItem {
+  quote?: StockQuote;
+  valuation?: StockValuation;
+  aiAnalysis?: StockAIAnalysis;
+}
+
+export interface HoldingDraft {
+  symbol: string;
+  name: string;
+  category?: string;
+  currentPrice?: number;
+}
 
 export interface Toast {
   id: string;

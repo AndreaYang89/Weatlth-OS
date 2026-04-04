@@ -2,7 +2,7 @@ import React from 'react';
 import { usePortfolioStore } from '@/store';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { PieChart, List, Sparkles, Calculator, BookOpen, TrendingUp, Upload, Settings, Receipt } from 'lucide-react';
+import { PieChart, List, Sparkles, Calculator, BookOpen, TrendingUp, Upload, Settings, Receipt, Eye } from 'lucide-react';
 import type { TabType } from '@/types';
 import { formatCurrency } from '@/utils/format';
 
@@ -17,6 +17,7 @@ const mainNav: { id: TabType; label: string; icon: React.ElementType; desc: stri
   { id: 'ai',            label: 'AI 评估',  icon: Sparkles,   desc: '智能分析'    },
   { id: 'rebalance',     label: '调仓计算', icon: Calculator, desc: '再平衡建议'  },
   { id: 'review',        label: '复盘日记', icon: BookOpen,   desc: '历史记录'    },
+  { id: 'watchlist',     label: '关注列表', icon: Eye,        desc: '选股研究'    },
   { id: 'import',        label: '导入资产', icon: Upload,     desc: 'CSV / Excel' },
 ];
 

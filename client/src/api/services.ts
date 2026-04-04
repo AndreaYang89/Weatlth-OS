@@ -13,7 +13,16 @@ import type {
   RebalanceData,
   Transaction,
   ReviewEntry,
-  CreateReviewData
+  CreateReviewData,
+  AnalyzedHolding,
+  Stock,
+  StockQuote,
+  StockValuation,
+  StockFinancial,
+  StockTechnical,
+  StockAIAnalysis,
+  StockNews,
+  WatchlistItem,
 } from '@/types';
 
 // Auth Services
@@ -141,6 +150,49 @@ export const transactionsApi = {
 
 // Health Check
 export const healthApi = {
-  check: () => 
+  check: () =>
     apiClient.get<ApiResponse<{ status: string; message: string; timestamp: string; version: string }>>('/health'),
+};
+
+export const stockApi = {
+  searchStocks: (keyword: string) =>
+    apiClient.get<ApiResponse<Stock[]>>('/stocks/search', { params: { keyword } }),
+
+  getQuote: (symbol: string) =>
+    apiClient.get<ApiResponse<StockQuote>>(`/stocks/${symbol}/quote`),
+
+  getValuation: (symbol: string) =>
+    apiClient.get<ApiResponse<StockValuation>>(`/stocks/${symbol}/valuation`),
+
+  getFinancial: (symbol: string) =>
+    apiClient.get<ApiResponse<StockFinancial>>(`/stocks/${symbol}/financial`),
+
+  getTechnical: (symbol: string) =>
+    apiClient.get<ApiResponse<StockTechnical>>(`/stocks/${symbol}/technical`),
+
+  getAIAnalysis: (symbol: string) =>
+    apiClient.get<ApiResponse<StockAIAnalysis>>(`/stocks/${symbol}/analysis`),
+
+  getNews: (symbol: string) =>
+    apiClient.get<ApiResponse<StockNews[]>>(`/stocks/${symbol}/news`),
+
+  getHistory: (symbol: string, period: string = '1y') =>
+    apiClient.get<ApiResponse<unknown[]>>(`/stocks/${symbol}/history`, { params: { period } }),
+
+  batchQuote: (symbols: string[]) =>
+    apiClient.post<ApiResponse<Record<string, StockQuote>>>('/stocks/batch/quote', { symbols }),
+
+  // Watchlist CRUD (persisted per user)
+  getWatchlist: () =>
+    apiClient.get<ApiResponse<WatchlistItem[]>>('/stocks/watchlist'),
+
+  addToWatchlist: (data: { symbol: string; name: string; group?: WatchlistItem['group'] }) =>
+    apiClient.post<ApiResponse<WatchlistItem>>('/stocks/watchlist', data),
+
+  removeFromWatchlist: (id: string) =>
+    apiClient.delete<ApiResponse<void>>(`/stocks/watchlist/${id}`),
+
+  /** 轻量查询单支股票是否在关注列表中，供 StockDetailPage 用，避免加载全量列表 */
+  checkWatchlist: (symbol: string) =>
+    apiClient.get<ApiResponse<{ inWatchlist: boolean; id?: string; group?: WatchlistItem['group']; source?: WatchlistItem['source'] }>>('/stocks/watchlist/check', { params: { symbol } }),
 };

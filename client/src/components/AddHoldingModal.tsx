@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePortfolioStore, useToastStore } from '@/store';
 import { holdingsApi } from '@/api/services';
 import { X, TrendingUp, TrendingDown } from 'lucide-react';
+import type { HoldingDraft } from '@/types';
 
 interface AddHoldingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialBuyData?: HoldingDraft | null;
 }
 
 const categories = [
@@ -23,7 +25,7 @@ const inputClass =
   'w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm placeholder:text-stone-400 focus:outline-none focus:border-[#D97757]/60 focus:ring-2 focus:ring-[#D97757]/10 transition-all';
 const labelClass = 'block text-xs font-medium text-stone-500 mb-1.5';
 
-export const AddHoldingModal: React.FC<AddHoldingModalProps> = ({ isOpen, onClose }) => {
+export const AddHoldingModal: React.FC<AddHoldingModalProps> = ({ isOpen, onClose, initialBuyData }) => {
   const [tab, setTab] = useState<'buy' | 'sell'>('buy');
 
   // Buy form state
@@ -49,6 +51,28 @@ export const AddHoldingModal: React.FC<AddHoldingModalProps> = ({ isOpen, onClos
 
   const { createHolding, holdings, fetchHoldings } = usePortfolioStore();
   const { addToast } = useToastStore();
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setSellForm({ holdingId: '', shares: '', price: '', fees: '', notes: '' });
+
+    if (initialBuyData) {
+      setTab('buy');
+      setBuyForm({
+        symbol: initialBuyData.symbol || '',
+        name: initialBuyData.name || '',
+        category: initialBuyData.category || '其他',
+        shares: '',
+        avgCost: initialBuyData.currentPrice ? initialBuyData.currentPrice.toFixed(2) : '',
+        currentPrice: initialBuyData.currentPrice ? initialBuyData.currentPrice.toFixed(2) : '',
+      });
+      return;
+    }
+
+    setTab('buy');
+    setBuyForm({ symbol: '', name: '', category: '消费', shares: '', avgCost: '', currentPrice: '' });
+  }, [initialBuyData, isOpen]);
 
   if (!isOpen) return null;
 

@@ -97,3 +97,32 @@
 
 @keyframes fade-in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 .animate-fade-in { animation: fade-in 0.25s ease-out; }
+
+/* ── Watchlist / Stock Research ───────────────────────────────── */
+.card-top-line {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.5), transparent);
+}
+
+.btn-solid {
+  background-color: #D97757;
+  color: white;
+  transition: background-color 0.2s;
+}
+.btn-solid:hover { background-color: #c26a4d; }
+
+.percentile-low  { background-color: #22c55e; }
+.percentile-mid  { background-color: #eab308; }
+.percentile-high { background-color: #ef4444; }
+
+.star-filled { color: #D97757; }
+.star-empty  { color: #d6d3d1; }
+
+.price-up   { color: #16a34a; }
+.price-down { color: #dc2626; }
+
+.tag-holding  { background-color: rgba(217,119,87,0.12); color: #D97757; }
+.tag-watching { background-color: rgba(59,130,246,0.12);  color: #3b82f6; }
+.tag-custom   { background-color: rgba(139,92,246,0.12);  color: #8b5cf6; }

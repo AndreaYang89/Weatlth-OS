@@ -12,28 +12,61 @@ import { RebalancePage } from '@/pages/RebalancePage';
 import { ReviewPage } from '@/pages/ReviewPage';
 import { ImportPage } from '@/pages/ImportPage';
 import { SettingsPage } from '@/pages/SettingsPage';
-import type { TabType } from '@/types';
+import { WatchlistPage } from '@/pages/WatchlistPage';
+import { StockDetailPage } from '@/pages/StockDetailPage';
+import type { HoldingDraft, TabType } from '@/types';
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+  const [holdingDraft, setHoldingDraft] = useState<HoldingDraft | null>(null);
+
+  const handleTabChange = (tab: TabType) => {
+    if (tab !== 'watchlist') setSelectedSymbol(null);
+    setActiveTab(tab);
+  };
+
+  const handleSelectStock = (symbol: string) => {
+    setSelectedSymbol(symbol);
+    setActiveTab('watchlist');
+  };
+
+  const handleBackFromStock = () => {
+    setSelectedSymbol(null);
+  };
+
+  const openAddHoldingModal = (draft?: HoldingDraft) => {
+    setHoldingDraft(draft || null);
+    setIsAddModalOpen(true);
+  };
+
+  const closeAddHoldingModal = () => {
+    setIsAddModalOpen(false);
+    setHoldingDraft(null);
+  };
 
   const pageTitles: Record<TabType, string> = {
     overview: '资产配置', holdings: '持仓明细', transactions: '交易流水', ai: 'AI评估',
     rebalance: '调仓计算', review: '复盘日记', import: '导入资产', settings: '系统配置',
+    watchlist: selectedSymbol ? '个股分析' : '关注列表',
   };
 
   const renderPage = () => {
     switch (activeTab) {
-      case 'overview':  return <OverviewPage onAddHolding={() => setIsAddModalOpen(true)} onNavigateToAI={() => setActiveTab('ai')} />;
-      case 'holdings':      return <HoldingsPage />;
-      case 'transactions':  return <TransactionsPage />;
-      case 'ai':        return <AIAnalysisPage />;
-      case 'rebalance': return <RebalancePage />;
-      case 'review':    return <ReviewPage />;
-      case 'import':    return <ImportPage onImportDone={() => setActiveTab('overview')} />;
-      case 'settings':  return <SettingsPage />;
-      default: return <OverviewPage onAddHolding={() => setIsAddModalOpen(true)} onNavigateToAI={() => setActiveTab('ai')} />;
+      case 'overview':     return <OverviewPage onAddHolding={() => openAddHoldingModal()} onNavigateToAI={() => setActiveTab('ai')} />;
+      case 'holdings':     return <HoldingsPage />;
+      case 'transactions': return <TransactionsPage />;
+      case 'ai':           return <AIAnalysisPage />;
+      case 'rebalance':    return <RebalancePage />;
+      case 'review':       return <ReviewPage />;
+      case 'import':       return <ImportPage onImportDone={() => setActiveTab('overview')} />;
+      case 'settings':     return <SettingsPage />;
+      case 'watchlist':
+        return selectedSymbol
+          ? <StockDetailPage symbol={selectedSymbol} onBack={handleBackFromStock} onAddHolding={openAddHoldingModal} />
+          : <WatchlistPage onSelectStock={handleSelectStock} onAddHolding={openAddHoldingModal} />;
+      default: return <OverviewPage onAddHolding={() => openAddHoldingModal()} onNavigateToAI={() => setActiveTab('ai')} />;
     }
   };
 
@@ -42,7 +75,7 @@ function App() {
       <ToastContainer />
 
       <div className="hidden lg:block">
-        <SideNav activeTab={activeTab} onTabChange={setActiveTab} />
+        <SideNav activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
 
       <div className="lg:ml-56">
@@ -63,10 +96,10 @@ function App() {
       </div>
 
       <div className="lg:hidden">
-        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+        <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
 
-      <AddHoldingModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
+      <AddHoldingModal isOpen={isAddModalOpen} onClose={closeAddHoldingModal} initialBuyData={holdingDraft} />
     </div>
   );
 }
