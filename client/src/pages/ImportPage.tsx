@@ -172,6 +172,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
 
   const doImport = async () => {
     setStatus('importing');
+    let importedCount = 0;
     try {
       const res = await holdingsApi.importHoldings(validRows.map(row => ({
         name: row.name, symbol: row.symbol, category: row.category,
@@ -179,7 +180,8 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
         currentPrice: row.currentPrice, notes: row.notes,
       })));
       const { created = 0, updated = 0, failed = 0 } = res.data.data ?? {};
-      setResult({ ok: created + updated, fail: failed });
+      importedCount = created + updated;
+      setResult({ ok: importedCount, fail: failed });
     } catch {
       setResult({ ok: 0, fail: validRows.length });
     }
@@ -188,7 +190,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
     await fetchPortfolio();
     await fetchHoldings();
     // 3 秒后自动跳回资产配置页
-    if (ok > 0) setTimeout(() => onImportDone?.(), 2500);
+    if (importedCount > 0) setTimeout(() => onImportDone?.(), 2500);
   };
 
   const reset = () => { setStatus('idle'); setRows([]); setFileName(''); };

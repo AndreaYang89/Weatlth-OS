@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usePortfolioStore } from '@/store';
-import { Card, CardContent } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { HoldingDetailModal } from '@/components/HoldingDetailModal';
 import {
   formatCurrency,

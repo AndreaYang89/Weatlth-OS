@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { usePortfolioStore, useToastStore } from '@/store';
-import { holdingsApi, transactionsApi } from '@/api/services';
+import { transactionsApi } from '@/api/services';
 import { formatCurrency } from '@/utils/format';
 import {
-  X, TrendingUp, TrendingDown, Bell, BellOff, Trash2,
+  X, TrendingUp, Bell, BellOff, Trash2,
   ArrowDownCircle, ArrowUpCircle, ShieldAlert, Target
 } from 'lucide-react';
 import type { Holding, Transaction } from '@/types';

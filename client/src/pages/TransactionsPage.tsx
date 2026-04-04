@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { transactionsApi } from '@/api/services';
-import { Card, CardContent } from '@/components/ui/Card';
 import { formatCurrency } from '@/utils/format';
 import { ArrowDownCircle, ArrowUpCircle, Receipt, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Transaction } from '@/types';

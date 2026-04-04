@@ -1,23 +1,16 @@
 import React, { useEffect } from 'react';
 import { usePortfolioStore } from '@/store';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/Card';
 import { 
   formatCurrency, 
-  formatPercentage, 
-  getValueColor,
-  getCategoryColor 
+  formatPercentage
 } from '@/utils/format';
 import {
   TrendingUp,
   Plus,
   Sparkles,
   AlertTriangle,
-  Activity,
-  BarChart3,
   Target,
-  Percent,
-  Bell,
   ShieldAlert
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -28,7 +21,7 @@ interface OverviewPageProps {
 }
 
 export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavigateToAI }) => {
-  const { portfolio, topHoldings, holdings, fetchPortfolio, isLoadingPortfolio, portfolioError } = usePortfolioStore();
+  const { portfolio, holdings, fetchPortfolio, isLoadingPortfolio, portfolioError } = usePortfolioStore();
 
   useEffect(() => {
     fetchPortfolio();

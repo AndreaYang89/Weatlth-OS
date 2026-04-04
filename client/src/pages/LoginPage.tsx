@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { TrendingUp } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);

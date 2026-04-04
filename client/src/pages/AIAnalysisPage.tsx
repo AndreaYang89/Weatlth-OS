@@ -4,16 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
   Sparkles,
-  AlertTriangle,
   RefreshCw,
   TrendingUp,
-  TrendingDown,
-  Minus,
   Star,
   ChevronDown,
   ChevronUp,
-  ArrowUpRight,
-  ArrowDownRight,
   ShieldAlert,
   BarChart3,
   Bot,
