@@ -176,7 +176,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
           <div>
             <p className="text-sm font-medium text-amber-400 mb-1">AI评估发现风险</p>
             <p className="text-xs text-stone-500">
-              单一板块占比过高，建议分散投资。点击查看调仓方案 →
+              单一板块占比过高，建议分散投资。点击查看行动计划 →
             </p>
           </div>
         </div>

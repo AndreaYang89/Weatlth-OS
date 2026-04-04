@@ -11,11 +11,12 @@ import apiClient from '@/api/client';
 interface ConfigState {
   marketDataProvider: 'mock' | 'tencent' | 'eastmoney' | 'akshare' | 'tushare';
   priceRefreshCron: string;
-  aiProvider: 'mock' | 'claude' | 'openai' | 'deepseek' | 'kimi';
+  aiProvider: 'mock' | 'claude' | 'openai' | 'deepseek' | 'kimi' | 'mimo';
   anthropicApiKey: string;
   openaiApiKey: string;
   deepseekApiKey: string;
   kimiApiKey: string;
+  mimoApiKey: string;
   akshareBridgeUrl: string;
   tushareApiToken: string;
 }
@@ -28,6 +29,7 @@ const DEFAULT: ConfigState = {
   openaiApiKey: '',
   deepseekApiKey: '',
   kimiApiKey: '',
+  mimoApiKey: '',
   akshareBridgeUrl: '',
   tushareApiToken: '',
 };
@@ -226,6 +228,7 @@ export const SettingsPage: React.FC = () => {
                   { value: 'mock',     label: 'Mock（确定性模拟分析）', badge: '默认' },
                   { value: 'deepseek', label: 'DeepSeek (V3 / R1)' },
                   { value: 'kimi',     label: 'Kimi (Moonshot AI)' },
+                  { value: 'mimo',     label: 'Xiaomi MiMo (OpenRouter)' },
                   { value: 'claude',   label: 'Claude (Anthropic)' },
                   { value: 'openai',   label: 'OpenAI (GPT-4)' },
                 ]}
@@ -248,6 +251,15 @@ export const SettingsPage: React.FC = () => {
                   onChange={set('kimiApiKey')}
                   placeholder="sk-..."
                   desc="前往 platform.moonshot.cn 获取 API Key，默认模型 moonshot-v1-8k"
+                />
+              )}
+              {config.aiProvider === 'mimo' && (
+                <ApiKeyInput
+                  label="MiMo / OpenRouter API Key"
+                  value={config.mimoApiKey}
+                  onChange={set('mimoApiKey')}
+                  placeholder="sk-or-v1-..."
+                  desc="默认走 OpenRouter 的 OpenAI 兼容接口，模型为 xiaomi/mimo-v2-flash"
                 />
               )}
               {config.aiProvider === 'claude' && (
@@ -289,6 +301,7 @@ export const SettingsPage: React.FC = () => {
               { label: '刷新频率',      value: config.priceRefreshCron,                                active: true },
               { label: 'DeepSeek Key',  value: config.deepseekApiKey  ? '已配置 ✓' : '未配置',        active: !!config.deepseekApiKey },
               { label: 'Kimi Key',      value: config.kimiApiKey      ? '已配置 ✓' : '未配置',        active: !!config.kimiApiKey },
+              { label: 'MiMo Key',      value: config.mimoApiKey      ? '已配置 ✓' : '未配置',        active: !!config.mimoApiKey },
               { label: 'Claude Key',    value: config.anthropicApiKey ? '已配置 ✓' : '未配置',        active: !!config.anthropicApiKey },
               { label: 'OpenAI Key',    value: config.openaiApiKey    ? '已配置 ✓' : '未配置',        active: !!config.openaiApiKey },
               { label: 'Tushare Token', value: config.tushareApiToken ? '已配置 ✓' : '未配置',        active: !!config.tushareApiToken },

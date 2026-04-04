@@ -57,8 +57,8 @@ export const TransactionsPage: React.FC = () => {
           <Receipt className="w-4.5 h-4.5 text-[#D97757]" style={{ width: 18, height: 18 }} />
         </div>
         <div>
-          <h2 className="text-base font-bold text-stone-900">交易流水</h2>
-          <p className="text-xs text-stone-500">共 {total} 笔记录</p>
+          <h2 className="text-base font-bold text-stone-900">操作记录</h2>
+          <p className="text-xs text-stone-500">买入、卖出和历史执行记录，共 {total} 条</p>
         </div>
       </div>
 
@@ -113,8 +113,8 @@ export const TransactionsPage: React.FC = () => {
       ) : transactions.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Receipt className="w-12 h-12 text-stone-300 mb-3" />
-          <p className="text-stone-400 text-sm">暂无交易记录</p>
-          <p className="text-stone-400 text-xs mt-1">通过「记一笔」添加买入或卖出</p>
+              <p className="text-stone-400 text-sm">暂无交易记录</p>
+          <p className="text-stone-400 text-xs mt-1">通过「记一笔」记录买入或卖出，后续也会沉淀在这里</p>
         </div>
       ) : (
         <div className="space-y-2">

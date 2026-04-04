@@ -47,8 +47,8 @@ function App() {
   };
 
   const pageTitles: Record<TabType, string> = {
-    overview: '资产配置', holdings: '持仓明细', transactions: '交易流水', ai: 'AI评估',
-    rebalance: '调仓计算', review: '复盘日记', import: '导入资产', settings: '系统配置',
+    overview: '资产配置', holdings: '持仓明细', transactions: '操作记录', ai: 'AI评估',
+    rebalance: '行动计划', review: '复盘日记', import: '导入资产', settings: '系统配置',
     watchlist: selectedSymbol ? '个股分析' : '关注列表',
   };
 

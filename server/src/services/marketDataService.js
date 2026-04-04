@@ -69,6 +69,51 @@ const tencentProvider = {
   }
 };
 
+// ─── 东方财富 Provider ───────────────────────────────────────────────────────
+const eastmoneyProvider = {
+  async getPrice(symbol, _basePrice) {
+    const secid = symbol.startsWith('6') ? `1.${symbol}` : `0.${symbol}`;
+    const { data } = await axios.get('https://push2.eastmoney.com/api/qt/stock/get', {
+      timeout: 8000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        Referer: 'https://quote.eastmoney.com/',
+      },
+      params: {
+        secid,
+        fields: 'f43,f57,f58,f60,f170',
+      },
+    });
+
+    const row = data?.data;
+    if (!row?.f43 || !row?.f60) {
+      throw new Error(`东方财富行情解析失败: ${JSON.stringify(data).slice(0, 120)}`);
+    }
+
+    const price = parseFloat((row.f43 / 100).toFixed(3));
+    const prevClose = parseFloat((row.f60 / 100).toFixed(3));
+    const change = parseFloat((price - prevClose).toFixed(3));
+    const changePercent = row.f170 !== undefined
+      ? parseFloat((row.f170 / 100).toFixed(2))
+      : parseFloat(((change / prevClose) * 100).toFixed(2));
+
+    console.log(`[MarketData:eastmoney] ${symbol} → ¥${price}`);
+    return { price, change, changePercent, source: 'eastmoney', updatedAt: new Date() };
+  },
+
+  async getBatchPrices(symbolBasePairs) {
+    const results = new Map();
+    for (const { symbol, basePrice } of symbolBasePairs) {
+      try {
+        results.set(symbol, await this.getPrice(symbol, basePrice));
+      } catch (err) {
+        console.error(`[MarketData:eastmoney] ${symbol} 失败: ${err.message}`);
+      }
+    }
+    return results;
+  }
+};
+
 // ─── Tushare Pro Provider ─────────────────────────────────────────────────────
 // 注意: daily 接口返回最近交易日收盘价（非实时），适合收盘后更新
 const tushareProvider = {
@@ -129,6 +174,7 @@ const akshareProvider = {
 const providers = {
   mock:      mockProvider,
   tencent:   tencentProvider,
+  eastmoney: eastmoneyProvider,
   tushare:   tushareProvider,
   akshare:   akshareProvider,
 };

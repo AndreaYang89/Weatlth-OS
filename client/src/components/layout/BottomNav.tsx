@@ -2,7 +2,7 @@ import React from 'react';
 import { usePortfolioStore } from '@/store';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { PieChart, List, Sparkles, Calculator, Eye, Receipt, BookOpen } from 'lucide-react';
+import { PieChart, List, Sparkles, ClipboardList, Eye, Receipt, BookOpen } from 'lucide-react';
 import type { TabType } from '@/types';
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
@@ -12,9 +12,9 @@ interface BottomNavProps { activeTab: TabType; onTabChange: (tab: TabType) => vo
 const navItems: { id: TabType; label: string; icon: React.ElementType }[] = [
   { id: 'overview',      label: '配置', icon: PieChart   },
   { id: 'holdings',      label: '持仓', icon: List       },
-  { id: 'transactions',  label: '流水', icon: Receipt    },
+  { id: 'transactions',  label: '记录', icon: Receipt    },
   { id: 'ai',            label: 'AI',   icon: Sparkles   },
-  { id: 'rebalance',     label: '计算', icon: Calculator },
+  { id: 'rebalance',     label: '计划', icon: ClipboardList },
   { id: 'review',        label: '复盘', icon: BookOpen   },
   { id: 'watchlist',     label: '关注', icon: Eye        },
 ];

@@ -413,7 +413,7 @@ export const AIAnalysisPage: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-blue-400" />
-              调仓建议
+              行动建议
             </CardTitle>
           </CardHeader>
           <CardContent>

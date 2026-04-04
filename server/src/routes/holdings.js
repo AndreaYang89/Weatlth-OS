@@ -351,19 +351,56 @@ ${needAI.map(x => `${x.sym} ${x.name}`).join('\n')}`;
 
         try {
           let text = '';
-          if (provider === 'deepseek' || provider === 'kimi') {
-            const key = provider === 'deepseek' ? process.env.DEEPSEEK_API_KEY : process.env.KIMI_API_KEY;
-            const baseURL = provider === 'deepseek' ? 'https://api.deepseek.com' : 'https://api.moonshot.cn/v1';
-            const model = provider === 'deepseek'
-              ? (process.env.DEEPSEEK_MODEL || 'deepseek-chat')
-              : (process.env.KIMI_MODEL || 'moonshot-v1-8k');
+          if (provider === 'deepseek' || provider === 'kimi' || provider === 'mimo') {
+            const key =
+              provider === 'deepseek' ? process.env.DEEPSEEK_API_KEY :
+              provider === 'kimi' ? process.env.KIMI_API_KEY :
+              process.env.MIMO_API_KEY;
+            const baseURL =
+              provider === 'deepseek' ? (process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1') :
+              provider === 'kimi' ? (process.env.KIMI_BASE_URL || 'https://api.moonshot.cn/v1') :
+              (process.env.MIMO_BASE_URL || 'https://openrouter.ai/api/v1');
+            const model =
+              provider === 'deepseek'
+                ? (process.env.DEEPSEEK_MODEL || 'deepseek-chat')
+                : provider === 'kimi'
+                  ? (process.env.KIMI_MODEL || 'moonshot-v1-8k')
+                  : (process.env.MIMO_MODEL || 'xiaomi/mimo-v2-flash');
             if (key) {
-              const client = new OpenAI({ apiKey: key, baseURL, timeout: 15000, maxRetries: 0 });
-              const r = await client.chat.completions.create({
-                model,
-                messages: [{ role: 'user', content: prompt }],
-                max_tokens: 512,
+              const client = new OpenAI({
+                apiKey: key,
+                baseURL,
+                timeout: 15000,
+                maxRetries: 0,
+                ...(provider === 'mimo'
+                  ? {
+                      defaultHeaders: {
+                        'HTTP-Referer': process.env.MIMO_HTTP_REFERER || 'https://wealthos.local',
+                        'X-Title': process.env.MIMO_APP_NAME || 'WealthOS',
+                      },
+                    }
+                  : {}),
               });
+              let r;
+              try {
+                r = await client.chat.completions.create({
+                  model,
+                  messages: [{ role: 'user', content: prompt }],
+                  response_format: { type: 'json_object' },
+                  max_tokens: 512,
+                });
+              } catch (err) {
+                const bodyText = JSON.stringify(err.error || err.response?.data || '');
+                const maybeFormatIssue =
+                  (err.status || err.statusCode) === 400 &&
+                  /response_format|json_object|unsupported|invalid/i.test(bodyText + err.message);
+                if (!maybeFormatIssue) throw err;
+                r = await client.chat.completions.create({
+                  model,
+                  messages: [{ role: 'user', content: prompt }],
+                  max_tokens: 512,
+                });
+              }
               text = r.choices?.[0]?.message?.content || '';
             }
           } else if (provider === 'claude') {

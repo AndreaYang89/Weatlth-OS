@@ -10,6 +10,7 @@ let currentConfig = {
   openaiApiKey:       process.env.OPENAI_API_KEY       ? '***已配置***' : '',
   deepseekApiKey:     process.env.DEEPSEEK_API_KEY     ? '***已配置***' : '',
   kimiApiKey:         process.env.KIMI_API_KEY         ? '***已配置***' : '',
+  mimoApiKey:         process.env.MIMO_API_KEY         ? '***已配置***' : '',
   akshareBridgeUrl:   process.env.AKSHARE_BRIDGE_URL   || '',
   tushareApiToken:    process.env.TUSHARE_API_TOKEN    ? '***已配置***' : '',
 };
@@ -23,7 +24,7 @@ router.get('/', (req, res) => {
 router.put('/', (req, res) => {
   const allowed = [
     'marketDataProvider', 'priceRefreshCron', 'aiProvider',
-    'anthropicApiKey', 'openaiApiKey', 'deepseekApiKey', 'kimiApiKey',
+    'anthropicApiKey', 'openaiApiKey', 'deepseekApiKey', 'kimiApiKey', 'mimoApiKey',
     'akshareBridgeUrl', 'tushareApiToken',
   ];
 
@@ -39,6 +40,7 @@ router.put('/', (req, res) => {
         openaiApiKey:       'OPENAI_API_KEY',
         deepseekApiKey:     'DEEPSEEK_API_KEY',
         kimiApiKey:         'KIMI_API_KEY',
+        mimoApiKey:         'MIMO_API_KEY',
         akshareBridgeUrl:   'AKSHARE_BRIDGE_URL',
         tushareApiToken:    'TUSHARE_API_TOKEN',
       }[key];
@@ -68,12 +70,14 @@ router.get('/status', (req, res) => {
       keyPresent: {
         deepseek:  !!process.env.DEEPSEEK_API_KEY,
         kimi:      !!process.env.KIMI_API_KEY,
+        mimo:      !!process.env.MIMO_API_KEY,
         anthropic: !!process.env.ANTHROPIC_API_KEY,
         openai:    !!process.env.OPENAI_API_KEY,
       },
       activeKeyOk: (() => {
         if (aiProvider === 'deepseek')  return !!process.env.DEEPSEEK_API_KEY;
         if (aiProvider === 'kimi')      return !!process.env.KIMI_API_KEY;
+        if (aiProvider === 'mimo')      return !!process.env.MIMO_API_KEY;
         if (aiProvider === 'claude')    return !!process.env.ANTHROPIC_API_KEY;
         if (aiProvider === 'openai')    return !!process.env.OPENAI_API_KEY;
         return true; // mock 不需要 key

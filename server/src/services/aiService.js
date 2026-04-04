@@ -5,6 +5,7 @@
  *   - 'mock'     : 基于 symbol 哈希的确定性模拟分析（默认）
  *   - 'deepseek' : DeepSeek V3 / R1（兼容 OpenAI SDK）
  *   - 'kimi'     : Moonshot Kimi（兼容 OpenAI SDK）
+ *   - 'mimo'     : Xiaomi MiMo（默认走 OpenRouter 的 OpenAI 兼容端点）
  *   - 'claude'   : Anthropic Claude（@anthropic-ai/sdk）
  *   - 'openai'   : OpenAI GPT-4o
  */
@@ -109,66 +110,124 @@ function safeParseJSON(text, holding, providerName) {
   }
 }
 
-// ─── DeepSeek Provider ────────────────────────────────────────────────────────
-const deepseekProvider = {
-  async analyzeHolding(holding) {
-    const key = process.env.DEEPSEEK_API_KEY;
-    if (!key) throw new Error('DEEPSEEK_API_KEY 未配置');
-    const client = new OpenAI({
-      apiKey: key,
-      baseURL: 'https://api.deepseek.com',
-      timeout: 15000,   // 15s 超时：DeepSeek 正常 <5s，留足余量但不超代理限制
-      maxRetries: 0,    // 重试由 withRetry 统一管理
-    });
-    const model = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
-    console.log(`[AIService:deepseek] 调用 ${model} 分析 ${holding.symbol}...`);
-    const response = await withRetry(
-      () => client.chat.completions.create({
+function extractMessageText(response) {
+  const choice = response?.choices?.[0];
+  const message = choice?.message;
+  if (!message) return '';
+
+  if (typeof message.content === 'string') return message.content;
+  if (Array.isArray(message.content)) {
+    return message.content
+      .map(part => {
+        if (typeof part === 'string') return part;
+        if (part?.type === 'text') return part.text || '';
+        return '';
+      })
+      .join('')
+      .trim();
+  }
+
+  return '';
+}
+
+function buildOpenAICompatibleProvider({
+  providerName,
+  apiKeyEnv,
+  baseURL,
+  modelEnv,
+  defaultModel,
+  timeout = 30000,
+  defaultHeaders,
+  extraBody,
+}) {
+  return {
+    async analyzeHolding(holding) {
+      const key = process.env[apiKeyEnv];
+      if (!key) throw new Error(`${apiKeyEnv} 未配置`);
+
+      const client = new OpenAI({
+        apiKey: key,
+        baseURL,
+        timeout,
+        maxRetries: 0,
+        defaultHeaders,
+      });
+
+      const model = process.env[modelEnv] || defaultModel;
+      console.log(`[AIService:${providerName}] 调用 ${model} 分析 ${holding.symbol}...`);
+
+      const baseRequest = {
         model,
-        // 不传 response_format：DeepSeek 对该参数支持不稳定，可能触发 400 错误
-        // safeParseJSON 的正则提取已能可靠处理纯文本 JSON 输出
         messages: [
-          { role: 'system', content: '你是专业的 A 股投资分析师。只输出合法的 JSON 对象，不要任何解释、markdown 或额外文字。' },
+          { role: 'system', content: '你是专业的股票投资分析师。只输出合法的 JSON 对象，不要任何解释、markdown 或额外文字。' },
           { role: 'user', content: buildHoldingPrompt(holding) },
         ],
         max_tokens: 512,
-      }),
-      { retries: 1, baseDelayMs: 500, providerName: 'deepseek' }
-    );
-    const content = response.choices?.[0]?.message?.content;
-    if (!content) throw new Error('DeepSeek 返回空 choices');
-    return safeParseJSON(content, holding, 'deepseek');
-  },
-  analyzePortfolio: mockAI.analyzePortfolio,
-  generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations,
-};
+        response_format: { type: 'json_object' },
+        ...(extraBody ? { extra_body: extraBody } : {}),
+      };
+
+      const response = await withRetry(
+        async () => {
+          try {
+            return await client.chat.completions.create(baseRequest);
+          } catch (err) {
+            const status = err.status || err.statusCode;
+            const bodyText = JSON.stringify(err.error || err.response?.data || '');
+            const maybeFormatIssue =
+              status === 400 &&
+              /response_format|json_object|unsupported|invalid/i.test(bodyText + err.message);
+
+            if (!maybeFormatIssue) throw err;
+
+            console.warn(`[AIService:${providerName}] JSON 输出参数不兼容，回退纯文本 JSON 模式`);
+            const { response_format, ...fallbackRequest } = baseRequest;
+            return client.chat.completions.create(fallbackRequest);
+          }
+        },
+        { retries: 2, baseDelayMs: 800, providerName }
+      );
+
+      const content = extractMessageText(response);
+      if (!content) throw new Error(`${providerName} 返回空内容`);
+      return safeParseJSON(content, holding, providerName);
+    },
+    analyzePortfolio: mockAI.analyzePortfolio,
+    generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations,
+  };
+}
+
+// ─── DeepSeek Provider ────────────────────────────────────────────────────────
+const deepseekProvider = buildOpenAICompatibleProvider({
+  providerName: 'deepseek',
+  apiKeyEnv: 'DEEPSEEK_API_KEY',
+  baseURL: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1',
+  modelEnv: 'DEEPSEEK_MODEL',
+  defaultModel: 'deepseek-chat',
+  timeout: 20000,
+});
 
 // ─── Kimi (Moonshot) Provider ─────────────────────────────────────────────────
-const kimiProvider = {
-  async analyzeHolding(holding) {
-    const key = process.env.KIMI_API_KEY;
-    if (!key) throw new Error('KIMI_API_KEY 未配置');
-    const client = new OpenAI({
-      apiKey: key,
-      baseURL: 'https://api.moonshot.cn/v1',
-      timeout: 30000,
-      maxRetries: 0,
-    });
-    const model = process.env.KIMI_MODEL || 'moonshot-v1-8k';
-    console.log(`[AIService:kimi] 调用 ${model} 分析 ${holding.symbol}...`);
-    const response = await withRetry(
-      () => client.chat.completions.create({
-        model,
-        messages: [{ role: 'user', content: buildHoldingPrompt(holding) }],
-        max_tokens: 512,
-      }),
-      { retries: 3, baseDelayMs: 1000, providerName: 'kimi' }
-    );
-    return safeParseJSON(response.choices[0].message.content, holding, 'kimi');
+const kimiProvider = buildOpenAICompatibleProvider({
+  providerName: 'kimi',
+  apiKeyEnv: 'KIMI_API_KEY',
+  baseURL: process.env.KIMI_BASE_URL || 'https://api.moonshot.cn/v1',
+  modelEnv: 'KIMI_MODEL',
+  defaultModel: 'moonshot-v1-8k',
+});
+
+// ─── Xiaomi MiMo Provider ─────────────────────────────────────────────────────
+const mimoProvider = buildOpenAICompatibleProvider({
+  providerName: 'mimo',
+  apiKeyEnv: 'MIMO_API_KEY',
+  baseURL: process.env.MIMO_BASE_URL || 'https://openrouter.ai/api/v1',
+  modelEnv: 'MIMO_MODEL',
+  defaultModel: 'xiaomi/mimo-v2-flash',
+  defaultHeaders: {
+    'HTTP-Referer': process.env.MIMO_HTTP_REFERER || 'https://wealthos.local',
+    'X-Title': process.env.MIMO_APP_NAME || 'WealthOS',
   },
-  analyzePortfolio: mockAI.analyzePortfolio,
-  generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations,
-};
+});
 
 // ─── Claude Provider ──────────────────────────────────────────────────────────
 const claudeProvider = {
@@ -220,6 +279,7 @@ const providers = {
   mock:     { analyzeHolding: mockAI.analyzeHolding, analyzePortfolio: mockAI.analyzePortfolio, generateRebalanceRecommendations: mockAI.generateRebalanceRecommendations },
   deepseek: deepseekProvider,
   kimi:     kimiProvider,
+  mimo:     mimoProvider,
   claude:   claudeProvider,
   openai:   openaiProvider,
 };
