@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { holdingsApi } from '@/api/services';
 import { usePortfolioStore } from '@/store';
+import type { ImportHoldingError } from '@/types';
 
 // ── 支持的列映射（兼容券商导出格式）─────────────────────────────
 const COL_MAP: Record<string, string> = {
@@ -15,13 +16,15 @@ const COL_MAP: Record<string, string> = {
   '代码': 'symbol', '证券代码': 'symbol', '股票代码': 'symbol', 'symbol': 'symbol', 'code': 'symbol',
   // 股数/数量
   '持有数量': 'shares', '股数': 'shares', '数量': 'shares', '持仓数量': 'shares',
-  '可用数量': 'shares', 'shares': 'shares',
+  '可用数量': 'shares', '持股数量': 'shares', '持有股数': 'shares', '股份余额': 'shares', 'shares': 'shares',
   // 成本/均价
   '单位成本': 'avgCost', '成本价': 'avgCost', '均价': 'avgCost', '持仓成本': 'avgCost',
   '买入均价': 'avgCost', 'avgCost': 'avgCost', 'avg_cost': 'avgCost',
   // 现价
   '最新价': 'currentPrice', '现价': 'currentPrice', '当前价': 'currentPrice',
   '市价': 'currentPrice', 'currentPrice': 'currentPrice',
+  // 持仓金额（可在缺失股数时反推）
+  '持有金额': 'marketValue', '持仓市值': 'marketValue', '持仓金额': 'marketValue', '最新市值': 'marketValue',
   // 类别
   '类别': 'category', '板块': 'category', 'category': 'category',
   // 备注（其余字段忽略：盈亏、涨幅等为计算字段）
@@ -77,6 +80,34 @@ const downloadTemplate = () => {
   URL.revokeObjectURL(url);
 };
 
+function normalizeSymbol(value: unknown): string {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+
+  return raw
+    .replace(/^['"]+|['"]+$/g, '')
+    .replace(/^=/, '')
+    .replace(/[()]/g, '')
+    .replace(/\s+/g, '')
+    .toUpperCase();
+}
+
+function parseNumber(value: unknown): number {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+
+  const raw = String(value ?? '').trim();
+  if (!raw) return 0;
+
+  const normalized = raw
+    .replace(/[,\uFF0C]/g, '')
+    .replace(/[%￥¥元股份天]/g, '')
+    .replace(/^['"]+|['"]+$/g, '')
+    .trim();
+
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 // ── 解析任意行为标准对象 ───────────────────────────────────────
 const normalizeRow = (raw: Record<string, string>): ParsedRow => {
   const mapped: Record<string, string> = {};
@@ -84,16 +115,23 @@ const normalizeRow = (raw: Record<string, string>): ParsedRow => {
     const key = COL_MAP[k.trim()] ?? k.trim();
     mapped[key] = String(v ?? '').trim();
   }
+  const symbol = normalizeSymbol(mapped.symbol);
+  const shares = parseNumber(mapped.shares);
+  const avgCost = parseNumber(mapped.avgCost);
+  const currentPrice = parseNumber(mapped.currentPrice);
+  const marketValue = parseNumber(mapped.marketValue);
+  const inferredShares = shares > 0 ? shares : (marketValue > 0 && currentPrice > 0 ? marketValue / currentPrice : 0);
+
   const row: ParsedRow = {
     name:         mapped.name         || '',
-    symbol:       mapped.symbol       || '',
+    symbol,
     // 优先取文件中已有的类别；否则用规则引擎推断
     category:     CATEGORY_OPTIONS.includes(mapped.category)
                     ? mapped.category
-                    : guessCategory(mapped.symbol || '', mapped.name || ''),
-    shares:       parseFloat(mapped.shares)       || 0,
-    avgCost:      parseFloat(mapped.avgCost)      || 0,
-    currentPrice: mapped.currentPrice ? parseFloat(mapped.currentPrice) : undefined,
+                    : guessCategory(symbol || '', mapped.name || ''),
+    shares:       inferredShares,
+    avgCost,
+    currentPrice: currentPrice || undefined,
     notes:        mapped.notes || undefined,
   };
   if (!row.name)          row._error = '缺少名称';
@@ -141,6 +179,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
   const [status, setStatus]   = useState<ImportStatus>('idle');
   const [fileName, setFileName] = useState('');
   const [result, setResult]   = useState<{ ok: number; fail: number }>({ ok: 0, fail: 0 });
+  const [importErrors, setImportErrors] = useState<ImportHoldingError[]>([]);
   const [dragging, setDragging] = useState(false);
   const [classifying, setClassifying] = useState(false);
 
@@ -172,6 +211,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
 
   const doImport = async () => {
     setStatus('importing');
+    setImportErrors([]);
     let importedCount = 0;
     try {
       const res = await holdingsApi.importHoldings(validRows.map(row => ({
@@ -179,11 +219,13 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
         shares: row.shares, avgCost: row.avgCost,
         currentPrice: row.currentPrice, notes: row.notes,
       })));
-      const { created = 0, updated = 0, failed = 0 } = res.data.data ?? {};
+      const { created = 0, updated = 0, failed = 0, errors = [] } = res.data.data ?? {};
       importedCount = created + updated;
       setResult({ ok: importedCount, fail: failed });
+      setImportErrors(errors);
     } catch {
       setResult({ ok: 0, fail: validRows.length });
+      setImportErrors([]);
     }
     setStatus('done');
     // 刷新数据
@@ -193,7 +235,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
     if (importedCount > 0) setTimeout(() => onImportDone?.(), 2500);
   };
 
-  const reset = () => { setStatus('idle'); setRows([]); setFileName(''); };
+  const reset = () => { setStatus('idle'); setRows([]); setFileName(''); setImportErrors([]); };
 
   // AI 重新识别所有"其他"类别的条目
   const handleClassify = async () => {
@@ -396,6 +438,18 @@ export const ImportPage: React.FC<ImportPageProps> = ({ onImportDone }) => {
                 {result.fail > 0 && <>，失败 <span className="text-red-400 font-medium">{result.fail}</span> 条</>}
               </p>
             </div>
+            {importErrors.length > 0 && (
+              <div className="w-full max-w-xl space-y-2">
+                {importErrors.slice(0, 8).map((item, idx) => (
+                  <div key={`${item.index}-${idx}`} className="text-xs py-2 px-3 bg-red-500/5 border border-red-500/15 rounded-lg">
+                    <span className="text-red-400 font-medium">{item.reason}</span>
+                    <span className="text-stone-500 ml-2">
+                      {item.name || item.symbol || `第 ${item.index + 1} 行`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
             <Button variant="secondary" onClick={reset}>继续导入</Button>
           </CardContent>
         </Card>

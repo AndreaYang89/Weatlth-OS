@@ -251,6 +251,30 @@ router.get('/:id', auth, holdingIdValidation, validate(holdingIdValidation), asy
 // @route   POST /api/v1/holdings/import
 // @desc    Bulk upsert holdings from CSV/Excel import
 // @access  Private
+function normalizeImportedSymbol(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  return raw
+    .replace(/^['"]+|['"]+$/g, '')
+    .replace(/^=/, '')
+    .replace(/[()]/g, '')
+    .replace(/\s+/g, '')
+    .toUpperCase();
+}
+
+function parseImportedNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const raw = String(value ?? '').trim();
+  if (!raw) return 0;
+  const normalized = raw
+    .replace(/[,\uFF0C]/g, '')
+    .replace(/[%￥¥元股份天]/g, '')
+    .replace(/^['"]+|['"]+$/g, '')
+    .trim();
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 router.post('/import', auth, async (req, res) => {
   try {
     const items = req.body;
@@ -259,16 +283,40 @@ router.post('/import', auth, async (req, res) => {
     }
 
     let created = 0, updated = 0, failed = 0;
+    const errors = [];
 
-    for (const item of items) {
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
       try {
         const { symbol, name, category, shares, avgCost, currentPrice, notes } = item;
-        const sym = String(symbol || '').trim().toUpperCase();
-        if (!sym || !name || shares <= 0 || avgCost <= 0) { failed++; continue; }
+        const sym = normalizeImportedSymbol(symbol);
+        const cleanName = String(name || '').trim();
+        const cleanShares = parseImportedNumber(shares);
+        const cleanAvgCost = parseImportedNumber(avgCost);
+        const cleanCurrentPrice = parseImportedNumber(currentPrice);
+        if (!sym || !cleanName || cleanShares <= 0 || cleanAvgCost <= 0) {
+          failed++;
+          errors.push({
+            index,
+            symbol: sym || String(symbol || '').trim(),
+            name: cleanName,
+            reason: !sym ? '缺少或无法识别代码' :
+              !cleanName ? '缺少名称' :
+              cleanShares <= 0 ? '持有数量无效' : '单位成本无效'
+          });
+          continue;
+        }
 
-        const price = currentPrice || avgCost;
-        const marketValue = price * shares;
-        const patch = { name, category: category || '其他', shares, avgCost, currentPrice: price, marketValue };
+        const price = cleanCurrentPrice || cleanAvgCost;
+        const marketValue = price * cleanShares;
+        const patch = {
+          name: cleanName,
+          category: category || '其他',
+          shares: cleanShares,
+          avgCost: cleanAvgCost,
+          currentPrice: price,
+          marketValue
+        };
         if (notes !== undefined) patch.notes = notes;
 
         const existing = await Holding.findOne({ user: req.user._id, symbol: sym });
@@ -286,18 +334,26 @@ router.post('/import', auth, async (req, res) => {
           const Transaction = require('../models').Transaction;
           await new Transaction({
             user: req.user._id, holding: holding._id, symbol: sym,
-            type: 'buy', shares, price: avgCost, amount: avgCost * shares, notes: 'Import'
+            type: 'buy', shares: cleanShares, price: cleanAvgCost, amount: cleanAvgCost * cleanShares, notes: 'Import'
           }).save();
           created++;
         }
-      } catch (e) { failed++; }
+      } catch (e) {
+        failed++;
+        errors.push({
+          index,
+          symbol: normalizeImportedSymbol(item?.symbol),
+          name: String(item?.name || '').trim(),
+          reason: e.message || '保存失败'
+        });
+      }
     }
 
     syncHoldingWatchlist(req.user._id).catch(err => {
       console.error('[watchlistSync] import sync failed:', err);
     });
 
-    res.json({ status: 'success', data: { created, updated, failed } });
+    res.json({ status: 'success', data: { created, updated, failed, errors } });
   } catch (error) {
     console.error('Import holdings error:', error);
     res.status(500).json({ status: 'error', message: 'Server error' });

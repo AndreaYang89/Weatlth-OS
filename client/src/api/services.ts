@@ -7,6 +7,7 @@ import type {
   User,
   Holding,
   CreateHoldingData,
+  ImportHoldingError,
   Portfolio,
   TopHolding,
   AIAnalysis,
@@ -88,7 +89,7 @@ export const holdingsApi = {
     apiClient.post<ApiResponse<{ updated: number; failed: number }>>('/holdings/refresh-prices'),
 
   importHoldings: (items: CreateHoldingData[]) =>
-    apiClient.post<ApiResponse<{ created: number; updated: number; failed: number }>>('/holdings/import', items),
+    apiClient.post<ApiResponse<{ created: number; updated: number; failed: number; errors?: ImportHoldingError[] }>>('/holdings/import', items),
 
   classifyHoldings: (items: { symbol: string; name: string }[]) =>
     apiClient.post<ApiResponse<{ symbol: string; category: string }[]>>('/holdings/classify', items),

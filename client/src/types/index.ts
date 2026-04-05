@@ -59,6 +59,13 @@ export interface CreateHoldingData {
   notes?: string;
 }
 
+export interface ImportHoldingError {
+  index: number;
+  symbol?: string;
+  name?: string;
+  reason: string;
+}
+
 // Portfolio Types
 export interface Portfolio {
   totalAssets: number;
