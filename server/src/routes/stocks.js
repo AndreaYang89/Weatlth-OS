@@ -33,19 +33,16 @@ async function getSortedWatchlist(userId) {
   if (await needsWatchlistBackfill(userId)) {
     await syncHoldingWatchlist(userId);
   }
+  // group sort order: holding(0) → watching(1) → custom(2); within group: newest first
+  const order = { holding: 0, watching: 1, custom: 2 };
   const items = await WatchlistItem.find({ user: userId })
-    .sort({ group: 1, updatedAt: -1, createdAt: -1 })
+    .sort({ updatedAt: -1, createdAt: -1 })
     .lean();
 
-  const order = { holding: 0, watching: 1, custom: 2 };
+  // Sort by group in JS since MongoDB doesn't support custom enum ordering natively
+  items.sort((a, b) => (order[a.group] ?? 99) - (order[b.group] ?? 99));
 
-  return items
-    .sort((a, b) => {
-      const groupDiff = (order[a.group] ?? 99) - (order[b.group] ?? 99);
-      if (groupDiff !== 0) return groupDiff;
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-    })
-    .map(item => ({
+  return items.map(item => ({
       id: item._id.toString(),
       symbol: item.symbol,
       name: item.name,

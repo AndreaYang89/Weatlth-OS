@@ -301,46 +301,63 @@ function generateSignals(closes, ma5, ma20, rsi, macd) {
   return signals;
 }
 
+// ── Deterministic pseudo-random helpers (seeded by symbol) ─────
+// Ensures mock prices are stable across cache misses for the same symbol.
+function hashSymbol(symbol) {
+  let h = 5381;
+  for (let i = 0; i < symbol.length; i++) {
+    h = (h * 33 ^ symbol.charCodeAt(i)) >>> 0;
+  }
+  return h;
+}
+
+function seededRandom(seed) {
+  const x = Math.sin(seed + 1) * 10000;
+  return x - Math.floor(x);
+}
+
 // ── Mock Fallback Helpers ───────────────────────────────────────
 function mockQuote(symbol) {
   const meta = getStockMeta(symbol);
-  const base = 10 + Math.random() * 90;
-  const chg  = (Math.random() - 0.5) * base * 0.06;
+  const h    = hashSymbol(symbol);
+  const base = parseFloat((10 + seededRandom(h) * 90).toFixed(2));
+  const chg  = parseFloat(((seededRandom(h + 1) - 0.5) * base * 0.06).toFixed(2));
   return {
     symbol,
     name: meta?.name || `股票${symbol}`,
-    price: parseFloat(base.toFixed(2)),
-    change: parseFloat(chg.toFixed(2)),
+    price:         base,
+    change:        chg,
     changePercent: parseFloat(((chg / base) * 100).toFixed(2)),
-    open: parseFloat((base - chg * 0.3).toFixed(2)),
-    high: parseFloat((base + Math.abs(chg) * 0.5).toFixed(2)),
-    low:  parseFloat((base - Math.abs(chg) * 0.5).toFixed(2)),
-    volume: Math.floor(Math.random() * 10000000),
-    amount: Math.floor(Math.random() * 1000000000),
-    marketCap: Math.floor(Math.random() * 1e12),
-    pe: parseFloat((10 + Math.random() * 30).toFixed(2)),
-    pb: parseFloat((1  + Math.random() * 3).toFixed(2)),
-    industry: meta?.industry,
-    updateTime: new Date().toISOString(),
+    open:          parseFloat((base - chg * 0.3).toFixed(2)),
+    high:          parseFloat((base + Math.abs(chg) * 0.5).toFixed(2)),
+    low:           parseFloat((base - Math.abs(chg) * 0.5).toFixed(2)),
+    volume:        Math.floor(seededRandom(h + 2) * 10000000),
+    amount:        Math.floor(seededRandom(h + 3) * 1000000000),
+    marketCap:     Math.floor(seededRandom(h + 4) * 1e12),
+    pe:            parseFloat((10 + seededRandom(h + 5) * 30).toFixed(2)),
+    pb:            parseFloat((1  + seededRandom(h + 6) * 3).toFixed(2)),
+    industry:      meta?.industry,
+    updateTime:    new Date().toISOString(),
   };
 }
 
 function mockHistory(symbol, period) {
-  const days = { '1m': 30, '3m': 90, '6m': 180, '1y': 365, '2y': 730, '5y': 1825, all: 3650 };
+  const days  = { '1m': 30, '3m': 90, '6m': 180, '1y': 365, '2y': 730, '5y': 1825, all: 3650 };
   const count = days[period] || 365;
-  let price = 10 + Math.random() * 90;
+  const h     = hashSymbol(symbol);
+  let price   = 10 + seededRandom(h) * 90;
   return Array.from({ length: count }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (count - i));
-    const chg = (Math.random() - 0.5) * price * 0.03;
+    const chg = (seededRandom(h + i + 1) - 0.5) * price * 0.03;
     price = Math.max(1, price + chg);
     return {
-      date: date.toISOString().slice(0, 10),
-      open:  parseFloat((price - chg * 0.5).toFixed(2)),
-      close: parseFloat(price.toFixed(2)),
-      high:  parseFloat((price + Math.abs(chg)).toFixed(2)),
-      low:   parseFloat((price - Math.abs(chg)).toFixed(2)),
-      volume: Math.floor(Math.random() * 1000000),
+      date:   date.toISOString().slice(0, 10),
+      open:   parseFloat((price - chg * 0.5).toFixed(2)),
+      close:  parseFloat(price.toFixed(2)),
+      high:   parseFloat((price + Math.abs(chg)).toFixed(2)),
+      low:    parseFloat((price - Math.abs(chg)).toFixed(2)),
+      volume: Math.floor(seededRandom(h + i + 100) * 1000000),
     };
   });
 }
@@ -503,7 +520,7 @@ const stockDataService = {
       const pbPercentile = Math.min(100, Math.max(0, Math.round((pb / 6)  * 100)));
       const valuation = {
         symbol, peTtm: pe, pb,
-        ps:            pe * 0.5,
+        ps:            null, // Cannot derive PS from PE without revenue data
         peg:           pe > 0 ? pe / 15 : null,
         pePercentile,  pbPercentile,
         peIndustryAvg: pe * 1.1,
@@ -598,14 +615,26 @@ const stockDataService = {
     const hit = cacheGet(key);
     if (hit) return hit;
     try {
-      const [valuation, technical] = await Promise.all([
+      const [valuation, technical, financial] = await Promise.all([
         this.getValuation(symbol),
         this.getTechnical(symbol),
+        this.getFinancial(symbol),
       ]);
-      const valuationScore   = Math.round(Math.min(100, Math.max(0, 100 - valuation.pePercentile)));
-      const technicalScore   = technical.signal === 'bullish' ? 75 : technical.signal === 'bearish' ? 35 : 55;
-      const fundamentalScore = 55; // placeholder until real financial data available
-      const overallScore     = Math.round((valuationScore + technicalScore + fundamentalScore) / 3);
+      const valuationScore = Math.round(Math.min(100, Math.max(0, 100 - valuation.pePercentile)));
+      const technicalScore = technical.signal === 'bullish' ? 75 : technical.signal === 'bearish' ? 35 : 55;
+
+      // Use curated financial data when available; otherwise fall back to 55
+      let fundamentalScore = 55;
+      if (financial.dataAvailable) {
+        const { roe = 0, grossMargin = 0, revenueGrowth = 0, profitGrowth = 0, debtRatio = 0.5 } = financial;
+        const roeScore    = Math.min(90, Math.round(roe * 350));                                       // 20% ROE → 70 pts
+        const marginScore = Math.min(90, Math.round(grossMargin * 110));                               // 50% margin → 55 pts
+        const growthScore = Math.min(90, Math.max(10, Math.round(50 + (revenueGrowth + profitGrowth) * 1.2))); // 10% growth → ~74 pts
+        const debtScore   = Math.min(90, Math.round((1 - debtRatio) * 80));                            // 40% debt ratio → 48 pts
+        fundamentalScore  = Math.round((roeScore + marginScore + growthScore + debtScore) / 4);
+      }
+
+      const overallScore = Math.round((valuationScore + technicalScore + fundamentalScore) / 3);
       const recommendation   = overallScore >= 70 ? 'buy' : overallScore <= 40 ? 'sell' : 'hold';
 
       const analysis = {
@@ -615,7 +644,9 @@ const stockDataService = {
         summary: `${symbol} 估值处于历史 ${valuation.pePercentile < 30 ? '低位（具备安全边际）' : valuation.pePercentile > 70 ? '高位（需留意风险）' : '中等水平'}，技术面呈${technical.signal === 'bullish' ? '多头' : technical.signal === 'bearish' ? '空头' : '震荡'}格局。综合评分 ${overallScore} 分，建议${recommendation === 'buy' ? '买入' : recommendation === 'sell' ? '卖出' : '观望'}。`,
         valuationAnalysis: `当前 PE 为 ${valuation.peTtm.toFixed(1)} 倍，处于历史 ${valuation.pePercentile}% 分位。`,
         technicalAnalysis: `RSI(14) 为 ${technical.rsi?.toFixed(1) ?? '--'}，趋势 ${technical.trend === 'up' ? '向上' : technical.trend === 'down' ? '向下' : '震荡'}。`,
-        fundamentalAnalysis: '财务数据待接入真实数据源后更新。',
+        fundamentalAnalysis: financial.dataAvailable
+          ? `ROE ${((financial.roe || 0) * 100).toFixed(1)}%，毛利率 ${((financial.grossMargin || 0) * 100).toFixed(1)}%，收入增速 ${(financial.revenueGrowth || 0).toFixed(1)}%。`
+          : '财务数据待接入真实数据源后更新。',
         risks: [
           '市场系统性风险',
           '行业政策变化风险',

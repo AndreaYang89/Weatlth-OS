@@ -101,7 +101,9 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onAddHolding, onNavi
               {formatCurrency(pnl)} ({formatPercentage(pnlPercent)})
             </span>
             <span className="text-xs text-stone-400">
-              更新于 {new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+              更新于 {portfolio.lastUpdated
+                ? new Date(portfolio.lastUpdated).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+                : '--:--'}
             </span>
           </div>
         </CardContent>

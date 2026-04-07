@@ -471,17 +471,19 @@ export const WatchlistPage: React.FC<WatchlistPageProps> = ({ onSelectStock, onA
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-[#1C1917]">
-                      {item.quote ? `¥${item.quote.price.toFixed(2)}` : '--'}
+                      {item.quote?.price != null ? `¥${item.quote.price.toFixed(2)}` : '--'}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {item.quote ? (
+                      {item.quote?.changePercent != null ? (
                         <>
                           <div className={`text-sm font-medium ${item.quote.changePercent >= 0 ? 'price-up' : 'price-down'}`}>
                             {item.quote.changePercent >= 0 ? '+' : ''}{item.quote.changePercent.toFixed(2)}%
                           </div>
-                          <div className="text-xs text-stone-400">
-                            {item.quote.change >= 0 ? '+' : ''}{item.quote.change.toFixed(2)}
-                          </div>
+                          {item.quote.change != null && (
+                            <div className="text-xs text-stone-400">
+                              {item.quote.change >= 0 ? '+' : ''}{item.quote.change.toFixed(2)}
+                            </div>
+                          )}
                         </>
                       ) : (
                         <span className="text-stone-400">--</span>
@@ -491,7 +493,9 @@ export const WatchlistPage: React.FC<WatchlistPageProps> = ({ onSelectStock, onA
                       {item.valuation ? (
                         <>
                           {renderPercentileBar(item.valuation.pePercentile)}
-                          <div className="mt-0.5 text-xs text-stone-400">PE: {item.valuation.peTtm.toFixed(1)}</div>
+                          <div className="mt-0.5 text-xs text-stone-400">
+                            PE: {item.valuation.peTtm != null ? item.valuation.peTtm.toFixed(1) : '--'}
+                          </div>
                         </>
                       ) : (
                         <span className="text-stone-400">--</span>

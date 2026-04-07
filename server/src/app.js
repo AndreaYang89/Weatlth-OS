@@ -102,9 +102,10 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Serve frontend in production
+// Serve frontend in production (exclude API routes so they fall through to 404 handler)
 if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith(apiPrefix)) return next();
     res.sendFile(path.join(staticDir, 'index.html'));
   });
 }
